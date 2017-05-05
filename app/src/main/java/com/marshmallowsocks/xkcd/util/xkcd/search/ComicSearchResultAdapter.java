@@ -26,14 +26,10 @@ public class ComicSearchResultAdapter extends RecyclerView.Adapter<SearchResultV
 
     private List<XKCDComicBean> searchResultData;
     private Context msContext;
-    private int lastPosition;
-    private static long startDelay;
 
     public ComicSearchResultAdapter(Context context, List<XKCDComicBean> searchResultData) {
         msContext = context;
         this.searchResultData = searchResultData;
-        startDelay = 0;
-        lastPosition = -1;
     }
 
     @Override
@@ -46,7 +42,6 @@ public class ComicSearchResultAdapter extends RecyclerView.Adapter<SearchResultV
     public void onBindViewHolder(final SearchResultViewHolder holder, int position) {
         holder.comicTitle.setText(searchResultData.get(position).getTitle());
         Glide.with(msContext).load(searchResultData.get(position).getImageUrl()).into(holder.comicImage);
-        setAnimation(holder.itemView, position);
         final int intentPosition = position;
 
         holder.itemView.setOnClickListener(new View.OnClickListener() {
@@ -64,17 +59,4 @@ public class ComicSearchResultAdapter extends RecyclerView.Adapter<SearchResultV
     public int getItemCount() {
         return searchResultData.size();
     }
-
-    private void setAnimation(View viewToAnimate, int position)
-    {
-        if (position > lastPosition)
-        {
-            Animation animation = AnimationUtils.loadAnimation(msContext, android.R.anim.slide_in_left);
-            animation.setStartOffset(startDelay);
-            viewToAnimate.startAnimation(animation);
-            lastPosition = position;
-            startDelay += 100;
-        }
-    }
-
 }
