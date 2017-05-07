@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "418331278897",
+    "firebase_url": "https://msxkcd.firebaseio.com",
+    "project_id": "msxkcd",
+    "storage_bucket": "msxkcd.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:418331278897:android:331dc68029e1c18c",
+        "android_client_info": {
+          "package_name": "com.marshmallowsocks.xkcd"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "418331278897-v601pvh7jl09cnkshja0o9g39q21cjpi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-0AxLWKeUqS3aRfpuORwcxtNRL7T_sAs"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
