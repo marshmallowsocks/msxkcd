@@ -1,5 +1,7 @@
 package com.marshmallowsocks.xkcd.util.xkcd;
 
+import org.json.JSONObject;
+
 /**
  * Created by marshmallowsocks on 5/2/17.
  * A simple bean that describes the xkcd json object.
@@ -11,6 +13,7 @@ public class XKCDComicBean {
     private String imageUrl;
     private Integer number;
     private String date;
+    private String jsonRepresentation;
 
     public String getTitle() {
         return title;
@@ -50,5 +53,13 @@ public class XKCDComicBean {
 
     public void setDate(String date) {
         this.date = date;
+    }
+
+    public String jsonify() {
+        return jsonRepresentation;
+    }
+
+    public void setJsonRepresentation(JSONObject object) {
+        jsonRepresentation = object.toString();
     }
 }

@@ -11,7 +11,12 @@ public final class Constants {
     public final static String EXPLAIN_URL = "http://www.explainxkcd.com/wiki/index.php/%s";
     public final static String WHAT_IF_LATEST_URL = "https://what-if.xkcd.com";
     public final static String WHAT_IF_URL = "https://what-if.xkcd.com/%s";
+    public final static String LOADING_URL = "https://vignette1.wikia.nocookie.net/xkcd-time/images/6/6d/Waiting-intensifies.gif/revision/latest?cb=20150414215843";
+    public final static String FAVORITE_KEY = "xkcd_favorite_%s";
     public final static String SEARCH_TO_PAGE_ACTION = "search_to_page_action";
+    public final static String SHARED_PREFERENCES_FILE = "com.marshmallowsocks.xkcd";
+    public final static String NEW_XKCD = "msxkcd_xkcd_new";
+    public final static String NEW_COMIC_ADDED = "New comic added: ";
     public final static String LAST = "last";
 
     public final static String COMIC_TITLE = "title";
@@ -31,6 +36,7 @@ public final class Constants {
     public final static String WHAT_IF_ANSWER_BODY_HTML = "html";
     public final static String WHAT_IF_ILLUSTRATION = "illustration";
     public final static String WHAT_IF_BLOCKQUOTE = "blockquote";
+    public final static String WHAT_IF_LATEX_IMAGE = "latex_image";
 
     public final static String PARAGRAPH = "p";
     public final static String IMAGE = "img";

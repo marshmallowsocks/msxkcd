@@ -16,6 +16,7 @@ import java.util.List;
 public class MSXkcdDatabase extends SQLiteAssetHelper {
 
     private static final String DATABASE_NAME = "marshmallowsocks_xkcd.db";
+    private static final String TABLE_NAME = "comics";
     private static final int DATABASE_VERSION = 1;
 
     public MSXkcdDatabase(Context context) {
@@ -36,11 +37,10 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
         List<XKCDComicBean> result = new ArrayList<>();
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
 
-        String [] sqlSelect = {"num", "img", "title"};
+        String [] sqlSelect = {"num", Constants.COMIC_URL, Constants.COMIC_TITLE};
         String [] whereArgs = {"%" + queryString + "%", queryString };
-        String sqlTables = "comics";
 
-        qb.setTables(sqlTables);
+        qb.setTables(TABLE_NAME);
         Cursor c = qb.query(db, sqlSelect, Constants.SEARCH_QUERY, whereArgs, null, null, null);
 
         c.moveToFirst();
@@ -48,8 +48,8 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
             do {
                 XKCDComicBean resultRow = new XKCDComicBean();
                 resultRow.setNumber(Integer.parseInt(c.getString(c.getColumnIndex("num"))));
-                resultRow.setTitle(c.getString(c.getColumnIndex("title")).toUpperCase());
-                resultRow.setImageUrl(c.getString(c.getColumnIndex("img")));
+                resultRow.setTitle(c.getString(c.getColumnIndex(Constants.COMIC_TITLE)).toUpperCase());
+                resultRow.setImageUrl(c.getString(c.getColumnIndex(Constants.COMIC_URL)));
                 result.add(resultRow);
             } while (c.moveToNext());
         }
@@ -63,9 +63,9 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
             ContentValues newValues = new ContentValues();
 
             newValues.put("num", comicData.getNumber());
-            newValues.put("img", comicData.getImageUrl());
+            newValues.put(Constants.COMIC_URL, comicData.getImageUrl());
             newValues.put("alt", comicData.getAltText());
-            newValues.put("title", comicData.getTitle());
+            newValues.put(Constants.COMIC_TITLE, comicData.getTitle());
             newValues.put("year", comicData.getDate().split("-")[2]);
             newValues.put("day", comicData.getDate().split("-")[1]);
             newValues.put("month", comicData.getDate().split("-")[0]);
@@ -87,13 +87,44 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
         String [] sqlSelect = {"num"};
         String whereClause = "num = ?";
         String [] whereArgs = { num.toString() };
-        String sqlTables = "comics";
 
-        qb.setTables(sqlTables);
+        qb.setTables(TABLE_NAME);
         Cursor c = qb.query(db, sqlSelect, whereClause, whereArgs, null, null, null);
 
         c.moveToFirst();
         return c.getCount() != 0;
+    }
+
+    public XKCDComicBean getComic(Integer index) {
+        SQLiteDatabase db = getReadableDatabase();
+        SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+        XKCDComicBean result = new XKCDComicBean();
+
+        String [] sqlSelect = {Constants.COMIC_INDEX, Constants.COMIC_TITLE, Constants.COMIC_URL, "alt", "day", "month", "year"};
+        String whereClause = "num = ?";
+        String [] whereArgs = { index.toString() };
+
+        qb.setTables(TABLE_NAME);
+        Cursor c = qb.query(db, sqlSelect, whereClause, whereArgs, null, null, null);
+
+        c.moveToFirst();
+        if(c.getCount() != 0) {
+            do {
+                String date;
+                result.setNumber(Integer.parseInt(c.getString(c.getColumnIndex(Constants.COMIC_INDEX))));
+                result.setTitle(c.getString(c.getColumnIndex(Constants.COMIC_TITLE)).toUpperCase());
+                result.setImageUrl(c.getString(c.getColumnIndex(Constants.COMIC_URL)));
+                result.setAltText(c.getString(c.getColumnIndex(Constants.COMIC_EXTRA)).toUpperCase());
+
+                date = c.getString(c.getColumnIndex(Constants.COMIC_MONTH));
+                date += "-" + c.getString(c.getColumnIndex(Constants.COMIC_DAY));
+                date += "-" + c.getString(c.getColumnIndex(Constants.COMIC_YEAR));
+
+                result.setDate(date);
+
+            } while (c.moveToNext());
+        }
+        return result;
     }
 
 }

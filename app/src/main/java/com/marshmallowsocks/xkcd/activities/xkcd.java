@@ -4,12 +4,15 @@ import android.animation.Animator;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -27,8 +30,13 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.bumptech.glide.Glide;
 import com.github.chrisbanes.photoview.PhotoView;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.like.LikeButton;
+import com.like.OnLikeListener;
 import com.marshmallowsocks.xkcd.R;
 import com.marshmallowsocks.xkcd.util.core.Constants;
+import com.marshmallowsocks.xkcd.util.core.MSNewComicReceiver;
 import com.marshmallowsocks.xkcd.util.core.MSXkcdDatabase;
 import com.marshmallowsocks.xkcd.util.http.MSRequestQueue;
 import com.marshmallowsocks.xkcd.util.xkcd.XKCDComicBean;
@@ -39,7 +47,6 @@ import com.willowtreeapps.spruce.sort.DefaultSort;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Objects;
 import java.util.Random;
 
 import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
@@ -56,6 +63,7 @@ public class xkcd extends AppCompatActivity {
     private ColorStateList oldStates;
     private int[][] states;
     private int[] colors;
+    private MSNewComicReceiver newComicReceiver;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -75,14 +83,26 @@ public class xkcd extends AppCompatActivity {
                 .build()
         );
 
+        final ViewGroup viewGroup = (ViewGroup) ((ViewGroup) this
+                .findViewById(android.R.id.content)).getChildAt(0);
+
+        FirebaseApp.initializeApp(this);
+        FirebaseMessaging.getInstance().subscribeToTopic(Constants.NEW_XKCD);
+        newComicReceiver = new MSNewComicReceiver(viewGroup, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getComicData();
+            }
+        });
+        IntentFilter newComicFilter = new IntentFilter();
+        newComicFilter.addAction(Constants.NEW_COMIC_ADDED);
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(newComicReceiver, newComicFilter);
         if(getIntent() != null) {
             if(Constants.SEARCH_TO_PAGE_ACTION.equals(getIntent().getAction())) {
                 which = getIntent().getIntExtra("newPage", -1);
             }
         }
-
-        final ViewGroup viewGroup = (ViewGroup) ((ViewGroup) this
-                .findViewById(android.R.id.content)).getChildAt(0);
 
         new Spruce
                 .SpruceBuilder(viewGroup)
@@ -120,6 +140,7 @@ public class xkcd extends AppCompatActivity {
         final TextView metadata = (TextView) findViewById(R.id.metadata);
         final Button closeButton = (Button) findViewById(R.id.closeOverlay);
         final Button explainButton = (Button) findViewById(R.id.explainButton);
+        final LikeButton likeButton = (LikeButton) findViewById(R.id.favorite_comic);
 
         new Spruce
                 .SpruceBuilder(buttonBar)
@@ -127,10 +148,31 @@ public class xkcd extends AppCompatActivity {
                 .animateWith(new Animator[]{DefaultAnimations.shrinkAnimator(buttonBar, 1200)})
                 .start();
 
+        likeButton.setOnLikeListener(new OnLikeListener() {
+            @Override
+            public void liked(LikeButton likeButton) {
+                SharedPreferences preferences = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = preferences.edit();
+                editor.putString(String.format(Constants.FAVORITE_KEY, which.toString()), currentComic.jsonify());
+                editor.apply();
+            }
+
+            @Override
+            public void unLiked(LikeButton likeButton) {
+                SharedPreferences preferences = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = preferences.edit();
+                editor.remove(String.format(Constants.FAVORITE_KEY, which.toString()));
+                editor.apply();
+            }
+        });
+
         closeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                componentLayout.setBackgroundTintList(oldStates);
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    componentLayout.setBackgroundTintList(oldStates);
+                    altText.setElevation(0.0f);
+                }
                 comicHolder.setAlpha(1.0f);
                 buttonBar.setAlpha(1.0f);
                 toggleButtonBar(true);
@@ -138,7 +180,6 @@ public class xkcd extends AppCompatActivity {
                 closeButton.setVisibility(View.GONE);
                 explainButton.setVisibility(View.GONE);
                 metadata.setVisibility(View.GONE);
-                altText.setElevation(0.0f);
             }
         });
 
@@ -199,11 +240,11 @@ public class xkcd extends AppCompatActivity {
         nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!Objects.equals(which, max)) {
+                if (!(max.intValue() == which.intValue())) {
                     which++;
                 }
 
-                if (Objects.equals(which, max)) {
+                if (max.intValue() == which.intValue()) {
                     isLastComic = true;
                     isFirstComic = false;
                 } else {
@@ -281,7 +322,7 @@ public class xkcd extends AppCompatActivity {
 
                     nextButton.setAlpha(1f);
                     lastButton.setAlpha(1f);
-                } else if (Objects.equals(which, max)) {
+                } else if (max.intValue() == which.intValue()) {
                     previousButton.setEnabled(true);
                     firstButton.setEnabled(true);
 
@@ -312,6 +353,12 @@ public class xkcd extends AppCompatActivity {
         });
 
         if (which != -1) {
+            if(which.intValue() == max.intValue()) {
+                nextButton.setEnabled(false);
+                lastButton.setEnabled(false);
+                nextButton.setAlpha(0.5f);
+                lastButton.setAlpha(0.5f);
+            }
             getComicData(which.toString());
         }
         else {
@@ -335,13 +382,25 @@ public class xkcd extends AppCompatActivity {
                 buttonBar.getChildAt(i).setEnabled(toggle);
             }
         }
-        if(Objects.equals(which, max)) {
+        if(max.intValue() == which.intValue()) {
             for (int i = 0; i < buttonBar.getChildCount() - 2; i++) {
                 buttonBar.getChildAt(i).setEnabled(toggle);
             }
         }
     }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        IntentFilter newComicFilter = new IntentFilter();
+        newComicFilter.addAction(Constants.NEW_COMIC_ADDED);
 
+        LocalBroadcastManager.getInstance(this).registerReceiver(newComicReceiver, newComicFilter);
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(newComicReceiver);
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -367,13 +426,17 @@ public class xkcd extends AppCompatActivity {
             final Button explainButton = (Button) findViewById(R.id.explainButton);
 
             if(altText.getVisibility() == View.GONE) {
-                oldStates = componentLayout.getBackgroundTintList();
-                componentLayout.setBackgroundTintList(new ColorStateList(states, colors));
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    oldStates = componentLayout.getBackgroundTintList();
+                    componentLayout.setBackgroundTintList(new ColorStateList(states, colors));
+                }
                 comicHolder.setAlpha(0.3f);
                 buttonBar.setAlpha(0.3f);
                 toggleButtonBar(false);
                 altText.setVisibility(View.VISIBLE);
-                altText.setElevation(15.0f);
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    altText.setElevation(15.0f);
+                }
                 closeButton.setVisibility(View.VISIBLE);
                 explainButton.setVisibility(View.VISIBLE);
                 metadata.setVisibility(View.VISIBLE);
@@ -390,6 +453,12 @@ public class xkcd extends AppCompatActivity {
             onSearchRequested();
         }
 
+        if(id == R.id.action_favorites) {
+            Intent favoriteIntent = new Intent(this, Favorites.class);
+            startActivity(favoriteIntent);
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
     }
 
@@ -398,11 +467,15 @@ public class xkcd extends AppCompatActivity {
         TextView comicTitle = (TextView) findViewById(R.id.comicTitle);
         TextView altText = (TextView) findViewById(R.id.altText);
         TextView metadata = (TextView) findViewById(R.id.metadata);
+        LikeButton likeButton = (LikeButton) findViewById(R.id.favorite_comic);
+
+        likeButton.setLiked(isFavorite(which));
+
         if(currentComic.getImageUrl().endsWith(".gif")) {
             Glide.with(this).load(currentComic.getImageUrl()).asGif().into(comicHolder);
         }
         else {
-            Glide.with(this).load(currentComic.getImageUrl()).into(comicHolder);
+            Glide.with(this).load(currentComic.getImageUrl()).thumbnail(Glide.with(this).load(Constants.LOADING_URL)).crossFade().into(comicHolder);
         }
         comicTitle.setText(currentComic.getTitle());
         altText.setText(currentComic.getAltText());
@@ -415,6 +488,14 @@ public class xkcd extends AppCompatActivity {
     private void getComicData(String number) {
         String url;
         final boolean shouldMaxBeSet;
+        final MSXkcdDatabase db = new MSXkcdDatabase(xkcd.this);
+        if(!number.equals(Constants.LAST)) {
+            if(db.contains(Integer.parseInt(number))) {
+                currentComic = db.getComic(Integer.parseInt(number));
+                loadComic();
+                return;
+            }
+        }
         if(number.equals(Constants.LAST)) {
             url = Constants.LATEST_URL;
             shouldMaxBeSet = true;
@@ -431,13 +512,13 @@ public class xkcd extends AppCompatActivity {
                     {
                         try {
                             JSONObject result = new JSONObject(response);
-                            MSXkcdDatabase db = new MSXkcdDatabase(xkcd.this);
                             String date;
 
                             currentComic.setTitle(result.getString(Constants.COMIC_TITLE));
                             currentComic.setAltText(result.getString(Constants.COMIC_EXTRA).toUpperCase());
                             currentComic.setImageUrl(result.getString(Constants.COMIC_URL));
                             currentComic.setNumber(result.getInt(Constants.COMIC_INDEX));
+                            currentComic.setJsonRepresentation(result);
 
                             date = result.getString(Constants.COMIC_MONTH);
                             date += "-" + result.getString(Constants.COMIC_DAY);
@@ -448,7 +529,7 @@ public class xkcd extends AppCompatActivity {
                             which = result.getInt(Constants.COMIC_INDEX);
                             if(shouldMaxBeSet) {
                                 max = result.getInt(Constants.COMIC_INDEX);
-                                SharedPreferences preferences = getSharedPreferences("com.marshmallowsocks.xkcd", Context.MODE_PRIVATE);
+                                SharedPreferences preferences = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
 
                                 if(preferences.getInt("max", -1) < max) {
                                     SharedPreferences.Editor editor = preferences.edit();
@@ -484,5 +565,10 @@ public class xkcd extends AppCompatActivity {
                     }
                 });
         msRequestQueue.addToRequestQueue(strRequest, this);
+    }
+
+    private boolean isFavorite(Integer which) {
+        SharedPreferences preferences = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
+        return preferences.contains(String.format(Constants.FAVORITE_KEY, which.toString()));
     }
 }

@@ -18,4 +18,10 @@
         android:icon="@android:drawable/ic_menu_search"
         android:title="@string/search"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/action_favorites"
+        android:orderInCategory="100"
+        android:icon="@drawable/heart_on"
+        android:title="@string/title_activity_favorites"
+        app:showAsAction="always" />
 </menu>

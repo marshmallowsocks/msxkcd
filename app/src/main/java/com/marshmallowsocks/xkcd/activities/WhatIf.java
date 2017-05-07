@@ -1,12 +1,15 @@
 package com.marshmallowsocks.xkcd.activities;
 
+import android.app.ActionBar;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.widget.NestedScrollView;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutCompat;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.text.SpannableString;
@@ -19,6 +22,7 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -30,14 +34,18 @@ import com.marshmallowsocks.xkcd.R;
 import com.marshmallowsocks.xkcd.util.core.Constants;
 import com.marshmallowsocks.xkcd.util.whatif.CitationSpan;
 import com.marshmallowsocks.xkcd.util.whatif.WhatIfBean;
+import com.marshmallowsocks.xkcd.util.xkcd.XKCDComicBean;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
+import io.github.kexanie.library.MathView;
 import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
@@ -119,7 +127,7 @@ public class WhatIf extends AppCompatActivity {
 
                 for(Element node : doc.getElementsByClass(Constants.WHAT_IF_ENTRY).get(0).children()) {
                     WhatIfBean newNode = new WhatIfBean();
-
+                    boolean shouldAddNode = true;
                     switch(node.tagName()) {
                         case Constants.ANCHOR:
                             newNode.setType(Constants.WHAT_IF_TITLE);
@@ -145,8 +153,53 @@ public class WhatIf extends AppCompatActivity {
                                 //check for nested links
                                 newNode.setImageUrl(null);
                                 if(node.children().size() == 0) {
-                                    newNode.setType(Constants.WHAT_IF_ANSWER_BODY_TEXT);
-                                    newNode.setBody(node.text());
+                                    if(node.text().startsWith("\\[") && node.text().endsWith("\\]")) {
+                                        //is pure latex
+                                        String rawLatex = node.text();
+                                        newNode.setType(Constants.WHAT_IF_LATEX_IMAGE);
+                                        newNode.setBody(rawLatex);
+                                    }
+                                    else {
+                                        //2nd worst case: could be nested latex within non citation
+                                        //body
+                                        if(node.text().contains("\\(")) {
+
+                                            List<String> equationBodies = new ArrayList<>();
+                                            shouldAddNode = false;
+                                            for (String str : node.text().split(Pattern.quote("\\("))) {
+                                                if (str.matches(".*" + Pattern.quote("\\)") + ".*")) {
+                                                    Collections.addAll(equationBodies, str.split(Pattern.quote("\\)")));
+
+                                                } else {
+                                                    equationBodies.add(str);
+                                                }
+                                            }
+
+                                            //at this point, all odd indices contain equations.
+                                            //TODO: consider 0 being an equation
+
+                                            for(int i = 0; i < equationBodies.size(); i++) {
+                                                WhatIfBean tempNode = new WhatIfBean();
+                                                if(i % 2 == 0) {
+                                                    tempNode.setType(Constants.WHAT_IF_ANSWER_BODY_TEXT);
+                                                    tempNode.setBody(equationBodies.get(i));
+                                                    tempNode.setImageUrl(null);
+                                                }
+                                                else {
+                                                    tempNode.setType(Constants.WHAT_IF_LATEX_IMAGE);
+                                                    tempNode.setBody("\\(" + equationBodies.get(i) + "\\)");
+                                                    tempNode.setImageUrl(null);
+                                                }
+                                                body.add(tempNode);
+                                            }
+                                        }
+                                        else {
+                                            //phew. simplest case
+                                            newNode.setType(Constants.WHAT_IF_ANSWER_BODY_TEXT);
+                                            newNode.setBody(node.text());
+                                            newNode.setImageUrl(null);
+                                        }
+                                    }
                                 }
                                 else {
                                     newNode.setType(Constants.WHAT_IF_ANSWER_BODY_HTML);
@@ -159,6 +212,7 @@ public class WhatIf extends AppCompatActivity {
                                     }
 
                                     newNode.setBody(node.html());
+                                    newNode.setImageUrl(null);
                                 }
                             }
                             break;
@@ -180,8 +234,9 @@ public class WhatIf extends AppCompatActivity {
                             newNode.setBody(listText.toString());
                             break;
                     }
-
-                    body.add(newNode);
+                    if(shouldAddNode) {
+                        body.add(newNode);
+                    }
                 }
                 return body;
             } catch (Exception e) {
@@ -190,13 +245,14 @@ public class WhatIf extends AppCompatActivity {
         }
         @Override
         protected void onPostExecute(List<WhatIfBean> content) {
-            ScrollView body = (ScrollView) findViewById(R.id.whatIfScrollViewport);
+            final ScrollView body = (ScrollView) findViewById(R.id.whatIfScrollViewport);
             body.removeAllViews();
             LinearLayout bodyContents = new LinearLayout(WhatIf.this);
             bodyContents.setOrientation(LinearLayout.VERTICAL);
             for(WhatIfBean node : content) {
                 TextView paragraphContainer = null;
                 ImageView illustrationContainer = null;
+                NestedScrollView equationContainer = null;
 
                 switch (node.getType()) {
                     case Constants.WHAT_IF_TITLE:
@@ -253,6 +309,12 @@ public class WhatIf extends AppCompatActivity {
                             paragraphContainer.setText(Html.fromHtml(node.getBody()));
                         }
                         break;
+                    case Constants.WHAT_IF_LATEX_IMAGE:
+                        MathView equation = new MathView(WhatIf.this, null);
+                        equationContainer = new NestedScrollView(WhatIf.this);
+                        equation.setText(node.getBody());
+                        equationContainer.addView(equation);
+                        break;
                     case Constants.WHAT_IF_ILLUSTRATION:
                         illustrationContainer = new ImageView(WhatIf.this);
                         Glide.with(WhatIf.this).load(node.getImageUrl()).into(illustrationContainer);
@@ -273,8 +335,12 @@ public class WhatIf extends AppCompatActivity {
                 if(paragraphContainer != null) {
                     bodyContents.addView(paragraphContainer);
                 }
-                else {
+                else if(illustrationContainer != null) {
                     bodyContents.addView(illustrationContainer);
+
+                }
+                else {
+                    bodyContents.addView(equationContainer);
                 }
             }
             Button previousButton = (Button) findViewById(R.id.previousButton);
@@ -295,7 +361,12 @@ public class WhatIf extends AppCompatActivity {
                 nextButton.setAlpha(0.5f);
             }
             body.addView(bodyContents);
-            body.smoothScrollTo(0, 0);
+            body.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    body.fullScroll(ScrollView.FOCUS_UP);
+                }
+            }, 600);
         }
     }
 

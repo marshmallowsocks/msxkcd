@@ -40,7 +40,7 @@ public class ComicSearchResultAdapter extends RecyclerView.Adapter<SearchResultV
 
     @Override
     public void onBindViewHolder(final SearchResultViewHolder holder, int position) {
-        holder.comicTitle.setText(searchResultData.get(position).getTitle());
+        holder.comicTitle.setText(searchResultData.get(position).getTitle().toUpperCase());
         Glide.with(msContext).load(searchResultData.get(position).getImageUrl()).into(holder.comicImage);
         final int intentPosition = position;
 
