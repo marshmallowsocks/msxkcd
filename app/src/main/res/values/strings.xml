@@ -15,4 +15,6 @@
     <string name="title_activity_comic_search_results">xkcd SEARCH</string>
     <string name="no_results">NO RESULTS</string>
     <string name="title_activity_favorites">FAVORITES</string>
+    <string name="title_activity_all_comics">xkcd</string>
+    <string name="section_format">Hello World from section: %1$d</string>
 </resources>

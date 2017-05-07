@@ -1,15 +1,15 @@
 package com.marshmallowsocks.xkcd.activities;
 
-import android.app.ActionBar;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.NestedScrollView;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutCompat;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.text.SpannableString;
@@ -22,7 +22,7 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewTreeObserver;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -32,9 +32,9 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.marshmallowsocks.xkcd.R;
 import com.marshmallowsocks.xkcd.util.core.Constants;
+import com.marshmallowsocks.xkcd.util.core.MSNewComicReceiver;
 import com.marshmallowsocks.xkcd.util.whatif.CitationSpan;
 import com.marshmallowsocks.xkcd.util.whatif.WhatIfBean;
-import com.marshmallowsocks.xkcd.util.xkcd.XKCDComicBean;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -56,6 +56,8 @@ public class WhatIf extends AppCompatActivity {
     private boolean isPreviousAvailable;
     private boolean isNextAvailable;
 
+    private MSNewComicReceiver newComicReceiver;
+
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
@@ -74,6 +76,21 @@ public class WhatIf extends AppCompatActivity {
                 .build()
         );
 
+        final ViewGroup viewGroup = (ViewGroup) ((ViewGroup) this
+                .findViewById(android.R.id.content)).getChildAt(0);
+
+        newComicReceiver = new MSNewComicReceiver(viewGroup, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent xkcdIntent = new Intent(WhatIf.this, xkcd.class);
+                startActivity(xkcdIntent);
+            }
+        });
+
+        IntentFilter newComicFilter = new IntentFilter();
+        newComicFilter.addAction(Constants.NEW_COMIC_ADDED);
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(newComicReceiver, newComicFilter);
         final Button previousButton = (Button) findViewById(R.id.previousButton);
         final Button nextButton = (Button) findViewById(R.id.nextButton);
 
@@ -368,6 +385,19 @@ public class WhatIf extends AppCompatActivity {
                 }
             }, 600);
         }
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        IntentFilter newComicFilter = new IntentFilter();
+        newComicFilter.addAction(Constants.NEW_COMIC_ADDED);
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(newComicReceiver, newComicFilter);
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(newComicReceiver);
     }
 
     @Override

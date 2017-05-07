@@ -531,9 +531,9 @@ public class xkcd extends AppCompatActivity {
                                 max = result.getInt(Constants.COMIC_INDEX);
                                 SharedPreferences preferences = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
 
-                                if(preferences.getInt("max", -1) < max) {
+                                if(preferences.getInt(Constants.MAX, -1) < max) {
                                     SharedPreferences.Editor editor = preferences.edit();
-                                    editor.putInt("max", max);
+                                    editor.putInt(Constants.MAX, max);
                                     editor.apply();
 
                                     if(db.contains(currentComic.getNumber())) {

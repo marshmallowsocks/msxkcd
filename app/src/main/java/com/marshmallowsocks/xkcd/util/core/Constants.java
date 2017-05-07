@@ -18,6 +18,7 @@ public final class Constants {
     public final static String NEW_XKCD = "msxkcd_xkcd_new";
     public final static String NEW_COMIC_ADDED = "New comic added: ";
     public final static String LAST = "last";
+    public final static String MAX = "max";
 
     public final static String COMIC_TITLE = "title";
     public final static String COMIC_URL = "img";
