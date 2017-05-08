@@ -17,4 +17,6 @@
     <string name="title_activity_favorites">FAVORITES</string>
     <string name="title_activity_all_comics">xkcd</string>
     <string name="section_format">Hello World from section: %1$d</string>
+    <string name="all">all</string>
+    <string name="title_activity_msxkcd_swipe_view">MSxkcdSwipeView</string>
 </resources>

@@ -28,13 +28,16 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.marshmallowsocks.xkcd.R;
 import com.marshmallowsocks.xkcd.util.core.Constants;
 import com.marshmallowsocks.xkcd.util.core.MSNewComicReceiver;
+import com.marshmallowsocks.xkcd.util.core.MSXkcdDatabase;
 import com.marshmallowsocks.xkcd.util.whatif.CitationSpan;
 import com.marshmallowsocks.xkcd.util.whatif.WhatIfBean;
+import com.marshmallowsocks.xkcd.util.whatif.WhatIfSearchBean;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -43,6 +46,7 @@ import org.jsoup.nodes.Element;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.regex.Pattern;
 
 import io.github.kexanie.library.MathView;
@@ -53,10 +57,17 @@ import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 public class WhatIf extends AppCompatActivity {
 
     private Integer which;
+    private Integer maxWhich;
+    private boolean shouldMaxBeSet;
     private boolean isPreviousAvailable;
     private boolean isNextAvailable;
 
+    private Button nextButton;
+    private Button previousButton;
+    private Button randomButton;
+
     private MSNewComicReceiver newComicReceiver;
+    private MSXkcdDatabase database;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -86,26 +97,32 @@ public class WhatIf extends AppCompatActivity {
                 startActivity(xkcdIntent);
             }
         });
-
+        database = new MSXkcdDatabase(this);
         IntentFilter newComicFilter = new IntentFilter();
         newComicFilter.addAction(Constants.NEW_COMIC_ADDED);
 
         LocalBroadcastManager.getInstance(this).registerReceiver(newComicReceiver, newComicFilter);
-        final Button previousButton = (Button) findViewById(R.id.previousButton);
-        final Button nextButton = (Button) findViewById(R.id.nextButton);
+        previousButton = (Button) findViewById(R.id.previousButton);
+        nextButton = (Button) findViewById(R.id.nextButton);
+        randomButton = (Button) findViewById(R.id.randomButton);
 
         nextButton.setEnabled(false);
         previousButton.setEnabled(false);
 
-        new RetrieveWhatIfTask().execute(Constants.WHAT_IF_LATEST_URL);
+        if(getIntent().getIntExtra("newPage", -1) != -1) {
+            which = getIntent().getIntExtra("newPage", -1);
+            new RetrieveWhatIfTask().execute(String.format(Constants.WHAT_IF_URL, Integer.toString(which)));
+        }
 
+        else {
+            shouldMaxBeSet = true;
+            new RetrieveWhatIfTask().execute(Constants.WHAT_IF_LATEST_URL);
+        }
         previousButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                nextButton.setEnabled(false);
-                previousButton.setEnabled(false);
-                nextButton.setAlpha(0.5f);
-                previousButton.setAlpha(0.5f);
+                shouldMaxBeSet = false;
+                disableButtons();
                 which--;
                 new RetrieveWhatIfTask().execute(String.format(Constants.WHAT_IF_URL, which.toString()));
             }
@@ -114,14 +131,33 @@ public class WhatIf extends AppCompatActivity {
         nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                nextButton.setEnabled(false);
-                previousButton.setEnabled(false);
-                nextButton.setAlpha(0.5f);
-                previousButton.setAlpha(0.5f);
+                shouldMaxBeSet = false;
+                disableButtons();
                 which++;
                 new RetrieveWhatIfTask().execute(String.format(Constants.WHAT_IF_URL, which.toString()));
             }
         });
+
+        randomButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Random random = new Random();
+                which = random.nextInt(maxWhich) + 1;
+                disableButtons();
+                new RetrieveWhatIfTask().execute(String.format(Constants.WHAT_IF_URL, which.toString()));
+
+            }
+        });
+
+    }
+
+    private void disableButtons() {
+        nextButton.setEnabled(false);
+        previousButton.setEnabled(false);
+        randomButton.setEnabled(false);
+        nextButton.setAlpha(0.5f);
+        previousButton.setAlpha(0.5f);
+        randomButton.setAlpha(0.5f);
     }
 
     private class RetrieveWhatIfTask extends AsyncTask<String, Void, List<WhatIfBean>> {
@@ -136,6 +172,18 @@ public class WhatIf extends AppCompatActivity {
                 String whichText = doc.getElementsByClass("entry").get(0).child(0).attr("href");
                 which = Integer.parseInt(whichText.substring(19, whichText.lastIndexOf('/')));
 
+                if(shouldMaxBeSet) {
+                    maxWhich = which;
+                }
+
+                if(!database.containsWhatIf(which)) {
+                    WhatIfSearchBean newData = new WhatIfSearchBean();
+                    newData.setNumber(which);
+                    newData.setTitle(doc.getElementsByTag("h1").get(0).text());
+                    if(!database.addWhatIfMetadata(newData)) {
+                        Toast.makeText(WhatIf.this, "A database error occured", Toast.LENGTH_SHORT);
+                    }
+                }
                 //check if previous available:
                 isPreviousAvailable = doc.getElementsByClass("nav-prev").size() != 0;
 
@@ -360,11 +408,11 @@ public class WhatIf extends AppCompatActivity {
                     bodyContents.addView(equationContainer);
                 }
             }
-            Button previousButton = (Button) findViewById(R.id.previousButton);
-            Button nextButton = (Button) findViewById(R.id.nextButton);
 
             previousButton.setEnabled(isPreviousAvailable);
             nextButton.setEnabled(isNextAvailable);
+            randomButton.setEnabled(true);
+            randomButton.setAlpha(1.0f);
             if(isPreviousAvailable) {
                 previousButton.setAlpha(1.0f);
             }
@@ -377,6 +425,7 @@ public class WhatIf extends AppCompatActivity {
             else {
                 nextButton.setAlpha(0.5f);
             }
+
             body.addView(bodyContents);
             body.postDelayed(new Runnable() {
                 @Override
@@ -417,6 +466,12 @@ public class WhatIf extends AppCompatActivity {
         if(id == R.id.action_xkcd) {
             Intent xkcdIntent = new Intent(this, xkcd.class);
             startActivity(xkcdIntent);
+            return true;
+        }
+        if(id == R.id.action_all_what_if) {
+            Intent allWhatIfIntent = new Intent(this, ComicSearchResults.class);
+            allWhatIfIntent.setAction(Constants.ALL_WHAT_IF);
+            startActivity(allWhatIfIntent);
             return true;
         }
         if(id == R.id.action_search) {

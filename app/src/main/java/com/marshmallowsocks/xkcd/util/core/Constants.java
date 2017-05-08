@@ -6,6 +6,7 @@ package com.marshmallowsocks.xkcd.util.core;
  */
 
 public final class Constants {
+    public final static String APP_NAME = "MSXKCD";
     public final static String URL_PATTERN = "https://xkcd.com/%s/info.0.json";
     public final static String LATEST_URL = "https://xkcd.com/info.0.json";
     public final static String EXPLAIN_URL = "http://www.explainxkcd.com/wiki/index.php/%s";
@@ -17,6 +18,8 @@ public final class Constants {
     public final static String SHARED_PREFERENCES_FILE = "com.marshmallowsocks.xkcd";
     public final static String NEW_XKCD = "msxkcd_xkcd_new";
     public final static String NEW_COMIC_ADDED = "New comic added: ";
+    public final static String ALL_COMICS = "ALL_COMICS";
+    public final static String ALL_WHAT_IF = "ALL_WHAT_IF";
     public final static String LAST = "last";
     public final static String MAX = "max";
 

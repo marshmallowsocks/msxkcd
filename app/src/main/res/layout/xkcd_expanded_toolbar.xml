@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/appNavigationButtons"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal">
+
+    z<Button
+        android:id="@+id/altButton"
+        fontPath="fonts/xkcd.otf"
+        tools:ignore="MissingPrefix"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="2dp"
+        android:layout_weight="1"
+        android:background="@drawable/button"
+        android:text="@string/alt_text"
+        android:textColor="@android:color/white" />
+
+    <Button
+        android:id="@+id/whatIfButton"
+        fontPath="fonts/xkcd.otf"
+        tools:ignore="MissingPrefix"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="2dp"
+        android:layout_weight="1"
+        android:background="@drawable/button"
+        android:text="@string/title_activity_what_if"
+        android:textColor="@android:color/white" />
+
+    <Button
+        android:id="@+id/favoritesButton"
+        fontPath="fonts/xkcd.otf"
+        tools:ignore="MissingPrefix"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="2dp"
+        android:layout_weight="1"
+        android:background="@drawable/button"
+        android:text="@string/title_activity_favorites"
+        android:textColor="@android:color/white" />
+
+    <Button
+        android:id="@+id/allButton"
+        fontPath="fonts/xkcd.otf"
+        tools:ignore="MissingPrefix"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="2dp"
+        android:layout_weight="1"
+        android:background="@drawable/button"
+        android:text="@string/all"
+        android:textColor="@android:color/white" />
+
+    <ImageButton
+        android:id="@+id/searchButton"
+        fontPath="fonts/xkcd.otf"
+        tools:ignore="MissingPrefix"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:layout_weight="1"
+        android:background="@drawable/button_menu"
+        android:padding="8dp"
+        android:scaleX="1.2"
+        android:scaleY="1.2"
+        app:srcCompat="@android:drawable/ic_menu_search" />
+</LinearLayout>

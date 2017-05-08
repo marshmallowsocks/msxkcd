@@ -7,6 +7,7 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 
+import com.marshmallowsocks.xkcd.util.whatif.WhatIfSearchBean;
 import com.marshmallowsocks.xkcd.util.xkcd.XKCDComicBean;
 import com.readystatesoftware.sqliteasset.SQLiteAssetHelper;
 
@@ -17,6 +18,7 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
 
     private static final String DATABASE_NAME = "marshmallowsocks_xkcd.db";
     private static final String TABLE_NAME = "comics";
+    private static final String WHAT_IF_TABLE_NAME = "whatif";
     private static final int DATABASE_VERSION = 1;
 
     public MSXkcdDatabase(Context context) {
@@ -56,6 +58,29 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
         return result;
     }
 
+    public List<XKCDComicBean> getAllComics() {
+        SQLiteDatabase db = getReadableDatabase();
+        List<XKCDComicBean> result = new ArrayList<>();
+        SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+
+        String [] sqlSelect = {"num", Constants.COMIC_URL, Constants.COMIC_TITLE};
+
+        qb.setTables(TABLE_NAME);
+        Cursor c = qb.query(db, sqlSelect, null, null, null, null, null);
+
+        c.moveToFirst();
+        if(c.getCount() != 0) {
+            do {
+                XKCDComicBean resultRow = new XKCDComicBean();
+                resultRow.setNumber(Integer.parseInt(c.getString(c.getColumnIndex("num"))));
+                resultRow.setTitle(c.getString(c.getColumnIndex(Constants.COMIC_TITLE)).toUpperCase());
+                resultRow.setImageUrl(c.getString(c.getColumnIndex(Constants.COMIC_URL)));
+                result.add(resultRow);
+            } while (c.moveToNext());
+        }
+        return result;
+    }
+
     public boolean addNewMetadata(XKCDComicBean comicData) {
 
         try {
@@ -70,7 +95,7 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
             newValues.put("day", comicData.getDate().split("-")[1]);
             newValues.put("month", comicData.getDate().split("-")[0]);
 
-            db.insert(DATABASE_NAME, null, newValues);
+            db.insert(TABLE_NAME, null, newValues);
             db.close();
 
         }
@@ -93,6 +118,39 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
 
         c.moveToFirst();
         return c.getCount() != 0;
+    }
+
+    public boolean containsWhatIf(Integer num) {
+        SQLiteDatabase db = getReadableDatabase();
+        SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+
+        String [] sqlSelect = {"number"};
+        String whereClause = "number = ?";
+        String [] whereArgs = { num.toString() };
+
+        qb.setTables(WHAT_IF_TABLE_NAME);
+        Cursor c = qb.query(db, sqlSelect, whereClause, whereArgs, null, null, null);
+
+        c.moveToFirst();
+        return c.getCount() != 0;
+    }
+
+    public boolean addWhatIfMetadata(WhatIfSearchBean comicData) {
+        try {
+            SQLiteDatabase db = getWritableDatabase();
+            ContentValues newValues = new ContentValues();
+
+            newValues.put("number", comicData.getNumber());
+            newValues.put(Constants.COMIC_TITLE, comicData.getTitle());
+
+            db.insert(WHAT_IF_TABLE_NAME, null, newValues);
+            db.close();
+
+        }
+        catch(SQLException e) {
+            return false;
+        }
+        return true;
     }
 
     public XKCDComicBean getComic(Integer index) {
@@ -122,6 +180,28 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
 
                 result.setDate(date);
 
+            } while (c.moveToNext());
+        }
+        return result;
+    }
+
+    public List<WhatIfSearchBean> getAllWhatIf() {
+        SQLiteDatabase db = getReadableDatabase();
+        List<WhatIfSearchBean> result = new ArrayList<>();
+        SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+
+        String [] sqlSelect = {"number", Constants.COMIC_TITLE};
+
+        qb.setTables(WHAT_IF_TABLE_NAME);
+        Cursor c = qb.query(db, sqlSelect, null, null, null, null, null);
+
+        c.moveToFirst();
+        if(c.getCount() != 0) {
+            do {
+                WhatIfSearchBean resultRow = new WhatIfSearchBean();
+                resultRow.setNumber(c.getInt(c.getColumnIndex("number")));
+                resultRow.setTitle(c.getString(c.getColumnIndex(Constants.COMIC_TITLE)));
+                result.add(resultRow);
             } while (c.moveToNext());
         }
         return result;
