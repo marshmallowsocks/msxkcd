@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context="com.marshmallowsocks.xkcd.activities.msxkcd">
+
+    <RelativeLayout
+        android:id="@+id/mainContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorPrimaryLight">
+
+        <android.support.design.widget.AppBarLayout
+            android:id="@+id/appbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="@dimen/appbar_padding_top"
+            android:theme="@style/AppTheme.AppBarOverlay">
+
+            <android.support.v7.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="?attr/colorPrimary"
+                app:layout_scrollFlags="scroll|enterAlways"
+                app:popupTheme="@style/AppTheme.PopupOverlay">
+
+                <com.nightonke.boommenu.BoomMenuButton
+                    android:id="@+id/action_bar_left_bmb"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_gravity="end"
+                    app:bmb_backgroundEffect="false"
+                    app:bmb_frames="120"
+                    app:bmb_hideDelay="0"
+                    app:bmb_hideDuration="100"
+                    app:bmb_rotateDegree="1080"
+                    app:bmb_showDelay="0"
+                    app:bmb_showDuration="200" />
+
+                <ImageButton
+                    android:id="@+id/searchButton"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:layout_gravity="end"
+                    android:background="@drawable/button_menu"
+                    android:src="@android:drawable/ic_menu_search" />
+
+                <com.like.LikeButton
+                    android:id="@+id/likeButton"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_gravity="start"
+                    android:scaleX="2"
+                    android:scaleY="2"
+                    app:like_drawable="@drawable/fa_heart_on"
+                    app:unlike_drawable="@drawable/fa_heart_off" />
+            </android.support.v7.widget.Toolbar>
+
+        </android.support.design.widget.AppBarLayout>
+
+
+        <com.marshmallowsocks.xkcd.util.core.MSXkcdViewPager
+            android:id="@+id/container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@+id/buttonBar"
+            android:layout_below="@+id/appbar"
+            android:clipToPadding="false"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+        <LinearLayout
+            android:id="@+id/buttonBar"
+            style="?android:attr/buttonBarStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/firstButton"
+                fontPath="fonts/xkcd.otf"
+                android:layout_width="20dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="2dp"
+                android:layout_weight="0.1"
+                android:background="@drawable/button"
+                android:text="@string/first"
+                android:textColor="@drawable/button_text"
+                tools:ignore="ButtonStyle,MissingPrefix" />
+
+            <Button
+                android:id="@+id/previousButton"
+                fontPath="fonts/xkcd.otf"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="2dp"
+                android:layout_weight="0.1"
+                android:background="@drawable/button"
+                android:text="@string/prev"
+                android:textColor="@drawable/button_text"
+                tools:ignore="ButtonStyle,MissingPrefix" />
+
+            <Button
+                android:id="@+id/randomButton"
+                fontPath="fonts/xkcd.otf"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="2dp"
+                android:layout_weight="0.1"
+                android:background="@drawable/button"
+                android:text="@string/random"
+                android:textColor="@drawable/button_text"
+                tools:ignore="ButtonStyle,MissingPrefix" />
+
+            <Button
+                android:id="@+id/nextButton"
+                fontPath="fonts/xkcd.otf"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="2dp"
+                android:layout_weight="0.1"
+                android:background="@drawable/button"
+                android:text="@string/next"
+                android:textColor="@drawable/button_text"
+                tools:ignore="ButtonStyle,MissingPrefix" />
+
+            <Button
+                android:id="@+id/lastButton"
+                fontPath="fonts/xkcd.otf"
+                android:layout_width="20dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="2dp"
+                android:layout_weight="0.1"
+                android:background="@drawable/button"
+                android:text="@string/last"
+                android:textColor="@drawable/button_text"
+                tools:ignore="ButtonStyle,MissingPrefix" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/randomFab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/fab_margin"
+        android:layout_marginBottom="@dimen/fab_margin"
+        android:layout_gravity="bottom|end"
+        android:background="@color/colorPrimary"
+        android:clickable="true"
+        android:visibility="gone"
+        app:backgroundTint="@color/colorPrimary"
+        app:fabSize="normal"
+        app:srcCompat="@mipmap/ms_dice_icon" />
+</android.support.design.widget.CoordinatorLayout>

@@ -1,4 +1,4 @@
-package com.marshmallowsocks.xkcd.util.xkcd;
+package com.marshmallowsocks.xkcd.util.msxkcd;
 
 import org.json.JSONObject;
 

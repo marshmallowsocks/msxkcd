@@ -9,7 +9,7 @@ import android.view.ViewGroup;
 
 import com.marshmallowsocks.xkcd.R;
 import com.marshmallowsocks.xkcd.activities.WhatIf;
-import com.marshmallowsocks.xkcd.util.core.Constants;
+import com.marshmallowsocks.xkcd.util.constants.Constants;
 
 import java.util.List;
 

@@ -32,7 +32,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.marshmallowsocks.xkcd.R;
-import com.marshmallowsocks.xkcd.util.core.Constants;
+import com.marshmallowsocks.xkcd.util.constants.Constants;
 import com.marshmallowsocks.xkcd.util.core.MSNewComicReceiver;
 import com.marshmallowsocks.xkcd.util.core.MSXkcdDatabase;
 import com.marshmallowsocks.xkcd.util.whatif.CitationSpan;
@@ -57,7 +57,7 @@ import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 public class WhatIf extends AppCompatActivity {
 
     private Integer which;
-    private Integer maxWhich;
+    private static Integer maxWhich;
     private boolean shouldMaxBeSet;
     private boolean isPreviousAvailable;
     private boolean isNextAvailable;
@@ -93,10 +93,11 @@ public class WhatIf extends AppCompatActivity {
         newComicReceiver = new MSNewComicReceiver(viewGroup, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent xkcdIntent = new Intent(WhatIf.this, xkcd.class);
+                Intent xkcdIntent = new Intent(WhatIf.this, msxkcd.class);
                 startActivity(xkcdIntent);
             }
         });
+
         database = new MSXkcdDatabase(this);
         IntentFilter newComicFilter = new IntentFilter();
         newComicFilter.addAction(Constants.NEW_COMIC_ADDED);
@@ -148,7 +149,6 @@ public class WhatIf extends AppCompatActivity {
 
             }
         });
-
     }
 
     private void disableButtons() {
@@ -291,6 +291,7 @@ public class WhatIf extends AppCompatActivity {
                             newNode.setBody(node.text());
                             break;
                         case Constants.UNORDERED_LIST:
+                        case Constants.ORDERED_LIST:
                             newNode.setType(Constants.WHAT_IF_ANSWER_BODY_LIST);
                             StringBuilder listText = new StringBuilder();
                             for(Element li : node.children()) {
@@ -318,11 +319,15 @@ public class WhatIf extends AppCompatActivity {
                 TextView paragraphContainer = null;
                 ImageView illustrationContainer = null;
                 NestedScrollView equationContainer = null;
-
+                if(node == null) {
+                    Toast.makeText(WhatIf.this, "A node was null", Toast.LENGTH_SHORT).show();
+                    continue;
+                }
                 switch (node.getType()) {
                     case Constants.WHAT_IF_TITLE:
                         paragraphContainer = new TextView(WhatIf.this);
                         paragraphContainer.setTextSize(28.0f);
+                        paragraphContainer.setTextColor(getResources().getColor(android.R.color.black));
                         SpannableString spanString = new SpannableString(node.getBody());
                         spanString.setSpan(new UnderlineSpan(), 0, spanString.length(), 0);
                         spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, spanString.length(), 0);
@@ -464,18 +469,18 @@ public class WhatIf extends AppCompatActivity {
         int id = item.getItemId();
 
         if(id == R.id.action_xkcd) {
-            Intent xkcdIntent = new Intent(this, xkcd.class);
+            Intent xkcdIntent = new Intent(this, msxkcd.class);
             startActivity(xkcdIntent);
             return true;
         }
         if(id == R.id.action_all_what_if) {
-            Intent allWhatIfIntent = new Intent(this, ComicSearchResults.class);
+            Intent allWhatIfIntent = new Intent(this, WhatIfSearchResults.class);
             allWhatIfIntent.setAction(Constants.ALL_WHAT_IF);
             startActivity(allWhatIfIntent);
             return true;
         }
         if(id == R.id.action_search) {
-            //TODO: Search comics
+            onSearchRequested();
         }
 
         return super.onOptionsItemSelected(item);

@@ -7,8 +7,9 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 
+import com.marshmallowsocks.xkcd.util.constants.Constants;
 import com.marshmallowsocks.xkcd.util.whatif.WhatIfSearchBean;
-import com.marshmallowsocks.xkcd.util.xkcd.XKCDComicBean;
+import com.marshmallowsocks.xkcd.util.msxkcd.XKCDComicBean;
 import com.readystatesoftware.sqliteasset.SQLiteAssetHelper;
 
 import java.util.ArrayList;
@@ -23,13 +24,8 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
 
     public MSXkcdDatabase(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
-
-        // you can use an alternate constructor to specify a database location
-        // (such as a folder on the sd card)
-        // you must ensure that this folder is available and you have permission
-        // to write to it
-        //super(context, DATABASE_NAME, context.getExternalFilesDir(null).getAbsolutePath(), null, DATABASE_VERSION);
-
+        //read only database
+        setForcedUpgrade();
     }
 
     public List<XKCDComicBean> searchComic(String queryString) {
@@ -52,6 +48,29 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
                 resultRow.setNumber(Integer.parseInt(c.getString(c.getColumnIndex("num"))));
                 resultRow.setTitle(c.getString(c.getColumnIndex(Constants.COMIC_TITLE)).toUpperCase());
                 resultRow.setImageUrl(c.getString(c.getColumnIndex(Constants.COMIC_URL)));
+                result.add(resultRow);
+            } while (c.moveToNext());
+        }
+        return result;
+    }
+
+    public List<WhatIfSearchBean> searchWhatIf(String queryString) {
+        SQLiteDatabase db = getReadableDatabase();
+        List<WhatIfSearchBean> result = new ArrayList<>();
+        SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+
+        String [] sqlSelect = {"number", Constants.COMIC_TITLE};
+        String [] whereArgs = {"%" + queryString + "%", queryString };
+
+        qb.setTables(WHAT_IF_TABLE_NAME);
+        Cursor c = qb.query(db, sqlSelect, Constants.SEARCH_QUERY_WHAT_IF, whereArgs, null, null, null);
+
+        c.moveToFirst();
+        if(c.getCount() != 0) {
+            do {
+                WhatIfSearchBean resultRow = new WhatIfSearchBean();
+                resultRow.setNumber(c.getInt(c.getColumnIndex("number")));
+                resultRow.setTitle(c.getString(c.getColumnIndex(Constants.COMIC_TITLE)));
                 result.add(resultRow);
             } while (c.moveToNext());
         }

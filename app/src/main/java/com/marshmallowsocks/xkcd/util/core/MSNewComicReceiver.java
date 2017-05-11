@@ -8,6 +8,8 @@ import android.support.design.widget.Snackbar;
 import android.view.View;
 import android.widget.TextView;
 
+import com.marshmallowsocks.xkcd.util.constants.Constants;
+
 /**
  * Created by sriva on 5/6/2017.
  * A listener for new comics.

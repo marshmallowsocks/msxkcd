@@ -4,6 +4,10 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <uses-feature
+        android:name="android.hardware.sensor.accelerometer"
+        android:required="true" />
+
     <application
         android:allowBackup="true"
         android:fullBackupContent="false"
@@ -13,27 +17,19 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".activities.xkcd"
-            android:label="@string/app_name"
+            android:name=".activities.WhatIf"
+            android:configChanges="orientation|screenSize"
+            android:label="@string/title_activity_what_if"
             android:theme="@style/AppTheme.NoActionBar">
-            <!--intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter-->
-
             <meta-data
                 android:name="android.app.default_searchable"
-                android:value=".activities.ComicSearchResults" />
+                android:value=".activities.WhatIfSearchResults" />
         </activity>
         <activity
-            android:name=".activities.WhatIf"
-            android:label="@string/title_activity_what_if"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
             android:name=".activities.ComicSearchResults"
+            android:configChanges="orientation|screenSize"
             android:label="@string/title_activity_comic_search_results"
-            android:parentActivityName=".activities.xkcd"
+            android:parentActivityName=".activities.msxkcd"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.SEARCH" />
@@ -42,16 +38,32 @@
             <meta-data
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable"
-                android:value="com.marshmallowsocks.xkcd.xkcd" />
+                android:value="com.marshmallowsocks.xkcd.msxkcd" />
+        </activity>
+        <activity
+            android:name=".activities.WhatIfSearchResults"
+            android:configChanges="orientation|screenSize"
+            android:label="@string/title_activity_what_if"
+            android:parentActivityName=".activities.WhatIf"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/searchable"
+                android:value="com.marshmallowsocks.xkcd.WhatIf" />
         </activity>
         <activity
             android:name=".activities.Favorites"
+            android:configChanges="orientation|screenSize"
             android:label="@string/title_activity_favorites"
-            android:parentActivityName=".activities.xkcd"
+            android:parentActivityName=".activities.msxkcd"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.marshmallowsocks.xkcd.activities.xkcd" />
+                android:value="com.marshmallowsocks.xkcd.activities.msxkcd" />
         </activity>
 
         <service
@@ -73,7 +85,7 @@
 
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/xkcd_logo" />
+            android:resource="@drawable/ms_stat_msxkcd" />
         <!--
              Set color used with incoming notification messages. This is used when no color is set for the incoming
              notification message. See README(https://goo.gl/6BKBk7) for more.
@@ -83,14 +95,19 @@
             android:resource="@color/colorAccent" />
 
         <activity
-            android:name=".activities.MSxkcdSwipeView"
-            android:label="@string/title_activity_msxkcd_swipe_view"
+            android:name=".activities.msxkcd"
+            android:configChanges="orientation|screenSize"
+            android:label="@string/title_activity_msxkcd"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <meta-data
+                android:name="android.app.default_searchable"
+                android:value=".activities.ComicSearchResults" />
         </activity>
     </application>
 

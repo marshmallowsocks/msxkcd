@@ -11,9 +11,9 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.marshmallowsocks.xkcd.R;
-import com.marshmallowsocks.xkcd.util.core.Constants;
-import com.marshmallowsocks.xkcd.util.xkcd.XKCDComicBean;
-import com.marshmallowsocks.xkcd.util.xkcd.search.ComicSearchResultAdapter;
+import com.marshmallowsocks.xkcd.util.constants.Constants;
+import com.marshmallowsocks.xkcd.util.msxkcd.XKCDComicBean;
+import com.marshmallowsocks.xkcd.util.msxkcd.ComicSearchResultAdapter;
 
 import org.json.JSONException;
 import org.json.JSONObject;

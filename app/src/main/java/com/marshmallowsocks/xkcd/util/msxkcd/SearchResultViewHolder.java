@@ -1,4 +1,4 @@
-package com.marshmallowsocks.xkcd.util.xkcd.search;
+package com.marshmallowsocks.xkcd.util.msxkcd;
 
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
