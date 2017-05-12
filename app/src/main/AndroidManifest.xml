@@ -109,6 +109,9 @@
                 android:name="android.app.default_searchable"
                 android:value=".activities.ComicSearchResults" />
         </activity>
+        <activity android:name="com.marshmallowsocks.xkcd.activities.MSXkcdIntro"
+            android:label="AppIntro"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen"/>
     </application>
 
 </manifest>

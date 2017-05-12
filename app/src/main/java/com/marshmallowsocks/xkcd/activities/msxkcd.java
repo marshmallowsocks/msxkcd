@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 
+import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.Build;
@@ -130,6 +131,7 @@ public class msxkcd extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        startActivity(new Intent(this, MSXkcdIntro.class));
         setContentView(R.layout.activity_msxkcd);
         CalligraphyConfig.initDefault(new CalligraphyConfig.Builder()
                 .setDefaultFontPath("fonts/xkcd.otf")
@@ -156,6 +158,7 @@ public class msxkcd extends AppCompatActivity {
         toolbar.setTitle(appName);
 
         final FloatingActionButton randomFab = (FloatingActionButton) findViewById(R.id.randomFab);
+        randomFab.setRippleColor(Color.parseColor("#ffffff"));
         randomFab.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 randomButtonAction();
@@ -195,7 +198,7 @@ public class msxkcd extends AppCompatActivity {
                 "WHAT IF?",
                 "ALL",
                 "TOGGLE NAVIGATION BAR",
-                //"SETTINGS"
+                "SETTINGS"
         };
 
         int[] buttonImages = {
@@ -204,13 +207,13 @@ public class msxkcd extends AppCompatActivity {
              android.R.drawable.ic_menu_help,
              android.R.drawable.ic_menu_gallery,
              android.R.drawable.ic_input_add,
-             //android.R.drawable.ic_menu_preferences
+             android.R.drawable.ic_menu_preferences
         };
         BoomMenuButton bmb = (BoomMenuButton) toolbar.findViewById(R.id.action_bar_left_bmb);
         bmb.setButtonEnum(ButtonEnum.Ham);
         bmb.setBoomEnum(BoomEnum.HORIZONTAL_THROW_1);
-        bmb.setPiecePlaceEnum(PiecePlaceEnum.HAM_5);
-        bmb.setButtonPlaceEnum(ButtonPlaceEnum.HAM_5);
+        bmb.setPiecePlaceEnum(PiecePlaceEnum.HAM_6);
+        bmb.setButtonPlaceEnum(ButtonPlaceEnum.HAM_6);
         for (int i = 0; i < bmb.getButtonPlaceEnum().buttonNumber(); i++) {
             bmb.addBuilder(new HamButton.Builder()
                     //button attributes
@@ -260,11 +263,7 @@ public class msxkcd extends AppCompatActivity {
                                                     @Override
                                                     public void onAnimationEnd(Animator animation) {
                                                         buttonBar.setVisibility(View.GONE);
-                                                        AlphaAnimation fabFadeIn = new AlphaAnimation(0, 1);
-                                                        fabFadeIn.setDuration(400);
-                                                        fabFadeIn.setFillAfter(true);
-                                                        randomFab.setAnimation(fabFadeIn);
-                                                        randomFab.setVisibility(View.VISIBLE);
+                                                        randomFab.show();
                                                     }
 
                                                     @Override
@@ -284,13 +283,11 @@ public class msxkcd extends AppCompatActivity {
                                             .SpruceBuilder(buttonBar)
                                             .sortWith(new DefaultSort(50L))
                                             .animateWith(DefaultAnimations.fadeInAnimator(buttonBar, 400)).start();
-                                        AlphaAnimation fabFadeOut = new AlphaAnimation(1, 0);
-                                        fabFadeOut.setDuration(400);
-                                        fabFadeOut.setFillAfter(true);
-                                        randomFab.setAnimation(fabFadeOut);
-                                        randomFab.setVisibility(View.GONE);
+                                        randomFab.hide();
                                     }
                                     break;
+                                case 5:
+                                    startActivity(new Intent(msxkcd.this, MSXkcdIntro.class));
                             }
                         }
                     })

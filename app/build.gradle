@@ -23,6 +23,7 @@ repositories {
     maven {
         url "https://jitpack.io"
     }
+    mavenCentral()
 }
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
@@ -41,6 +42,7 @@ dependencies {
     compile 'com.github.jd-alexander:LikeButton:0.2.0'
     compile 'com.github.chrisbanes:PhotoView:2.0.0'
     compile 'io.github.kexanie.library:MathView:0.0.6'
+    compile 'com.github.paolorotolo:appintro:4.1.0'
     compile 'com.readystatesoftware.sqliteasset:sqliteassethelper:2.0.1'
     compile 'com.nightonke:boommenu:2.0.9'
     compile 'org.jsoup:jsoup:1.10.2'

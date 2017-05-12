@@ -227,18 +227,29 @@ public class WhatIf extends AppCompatActivity {
                                     else {
                                         //2nd worst case: could be nested latex within non citation
                                         //body
-                                        if(node.text().contains("\\(")) {
-
+                                        String[][] containsConditions = {
+                                                {"\\(", "\\)"},
+                                                {"\\[", "\\]"}
+                                        };
+                                        if(node.text().contains(containsConditions[0][0]) || node.text().contains(containsConditions[1][0])) {
+                                            int conditionIndex;
+                                            if(node.text().contains(containsConditions[0][0])) {
+                                                conditionIndex = 0;
+                                            }
+                                            else {
+                                                conditionIndex = 1;
+                                            }
                                             List<String> equationBodies = new ArrayList<>();
                                             shouldAddNode = false;
-                                            for (String str : node.text().split(Pattern.quote("\\("))) {
-                                                if (str.matches(".*" + Pattern.quote("\\)") + ".*")) {
-                                                    Collections.addAll(equationBodies, str.split(Pattern.quote("\\)")));
+                                            for (String str : node.text().split(Pattern.quote(containsConditions[conditionIndex][0]))) {
+                                                if (str.matches(".*" + Pattern.quote(containsConditions[conditionIndex][1]) + ".*")) {
+                                                    Collections.addAll(equationBodies, str.split(Pattern.quote(containsConditions[conditionIndex][1])));
 
                                                 } else {
                                                     equationBodies.add(str);
                                                 }
                                             }
+
 
                                             //at this point, all odd indices contain equations.
                                             //TODO: consider 0 being an equation
@@ -292,13 +303,16 @@ public class WhatIf extends AppCompatActivity {
                             break;
                         case Constants.UNORDERED_LIST:
                         case Constants.ORDERED_LIST:
-                            newNode.setType(Constants.WHAT_IF_ANSWER_BODY_LIST);
+                            /*newNode.setType(Constants.WHAT_IF_ANSWER_BODY_LIST);
                             StringBuilder listText = new StringBuilder();
                             for(Element li : node.children()) {
                                 listText.append(li.text()).append("\n");
                             }
                             newNode.setBody(listText.toString());
-                            break;
+                            break;*/
+                        default:
+                            newNode.setType(Constants.WHAT_IF_ANSWER_BODY_HTML);
+                            newNode.setBody(node.html());
                     }
                     if(shouldAddNode) {
                         body.add(newNode);
