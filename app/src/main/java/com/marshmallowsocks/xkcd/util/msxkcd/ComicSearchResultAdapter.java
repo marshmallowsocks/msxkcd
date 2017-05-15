@@ -11,8 +11,11 @@ import com.bumptech.glide.Glide;
 import com.marshmallowsocks.xkcd.R;
 import com.marshmallowsocks.xkcd.activities.msxkcd;
 import com.marshmallowsocks.xkcd.util.constants.Constants;
+import com.squareup.picasso.Picasso;
 
 import java.util.List;
+
+import static com.bumptech.glide.load.engine.DiskCacheStrategy.SOURCE;
 
 /**
  * Created by vatsa on 5/5/17.
@@ -38,7 +41,14 @@ public class ComicSearchResultAdapter extends RecyclerView.Adapter<SearchResultV
     @Override
     public void onBindViewHolder(final SearchResultViewHolder holder, int position) {
         holder.comicTitle.setText(searchResultData.get(position).getTitle().toUpperCase());
-        Glide.with(msContext).load(searchResultData.get(position).getImageUrl()).into(holder.comicImage);
+        if(searchResultData.get(position).getImageUrl().endsWith(".gif")) {
+            Glide.with(msContext).load(searchResultData.get(position).getImageUrl()).asGif().diskCacheStrategy(SOURCE)
+                    .into(holder.comicImage);
+        }
+        else {
+            Picasso.with(msContext).load(searchResultData.get(position).getImageUrl()).into(holder.comicImage);
+        }
+
         final int intentPosition = position;
 
         holder.itemView.setOnClickListener(new View.OnClickListener() {

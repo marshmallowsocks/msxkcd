@@ -12,31 +12,23 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
-import android.widget.ProgressBar;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
 import com.marshmallowsocks.xkcd.R;
 import com.marshmallowsocks.xkcd.util.constants.Constants;
 import com.marshmallowsocks.xkcd.util.core.MSNewComicReceiver;
 import com.marshmallowsocks.xkcd.util.core.MSXkcdDatabase;
 import com.marshmallowsocks.xkcd.util.http.MSRequestQueue;
-import com.marshmallowsocks.xkcd.util.msxkcd.XKCDComicBean;
 import com.marshmallowsocks.xkcd.util.msxkcd.ComicSearchResultAdapter;
+import com.marshmallowsocks.xkcd.util.msxkcd.XKCDComicBean;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
@@ -47,7 +39,14 @@ public class ComicSearchResults extends AppCompatActivity {
     protected LinearLayoutManager layoutManager;
     protected MSXkcdDatabase db;
     protected MSRequestQueue msRequestQueue;
+    protected Toolbar toolbar;
     private MSNewComicReceiver newComicReceiver;
+    private ImageButton sortButton;
+    private SortMode mode;
+    private enum SortMode {
+        ASC,
+        DESC
+    }
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -58,7 +57,26 @@ public class ComicSearchResults extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_comic_search_results);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        sortButton = (ImageButton) toolbar.findViewById(R.id.sortButton);
+        sortButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mode == SortMode.ASC) {
+                    mode = SortMode.DESC;
+                    sortButton.setScaleY(-1f);
+                    layoutManager.setStackFromEnd(true);
+                    layoutManager.setReverseLayout(true);
+                }
+                else {
+                    mode = SortMode.ASC;
+                    sortButton.setScaleX(1f);
+                    sortButton.setScaleY(1f);
+                    layoutManager.setStackFromEnd(false);
+                    layoutManager.setReverseLayout(false);
+                }
+            }
+        });
         setSupportActionBar(toolbar);
 
         if(getSupportActionBar() != null) {
@@ -78,6 +96,11 @@ public class ComicSearchResults extends AppCompatActivity {
             public void onClick(View v) {
                 startActivity(new Intent(ComicSearchResults.this, msxkcd.class));
             }
+        }, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(ComicSearchResults.this, WhatIf.class));
+            }
         });
         IntentFilter newComicFilter = new IntentFilter();
         newComicFilter.addAction(Constants.NEW_COMIC_ADDED);
@@ -89,6 +112,7 @@ public class ComicSearchResults extends AppCompatActivity {
         layoutManager = new LinearLayoutManager(this);
         layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
 
+        mode = SortMode.ASC;
         // Get the intent, verify the action and get the query
         Intent intent = getIntent();
         if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
@@ -105,6 +129,7 @@ public class ComicSearchResults extends AppCompatActivity {
                 //TODO
             }
         }
+
         else if(Constants.ALL_COMICS.equals(intent.getAction())) {
             toolbar.setTitle("COMICS");
             setSupportActionBar(toolbar);
@@ -126,10 +151,6 @@ public class ComicSearchResults extends AppCompatActivity {
 
     protected void getSearchData(String query) {
         getRelevantComicData(query);
-    }
-
-    protected List<XKCDComicBean> addSearchData(String query) {
-        return db.searchComic(query);
     }
 
     private void getAllData() {
@@ -155,61 +176,8 @@ public class ComicSearchResults extends AppCompatActivity {
         setAdapter(results);
     }
 
-    @SuppressWarnings("unused")
     private void getRelevantComicData(String query) {
-        final List<XKCDComicBean> results = new ArrayList<>();
-        final String queryString = query;
-        final ProgressBar loadingProgress = (ProgressBar) findViewById(R.id.loadingProgress);
-        final Set<Integer> loadedComics = new HashSet<>();
-        loadingProgress.setVisibility(View.VISIBLE);
-        StringRequest strRequest = new StringRequest(Request.Method.POST, Constants.RELEVANT_XKCD_SEARCH,
-                new Response.Listener<String>()
-                {
-                    @Override
-                    public void onResponse(String response)
-                    {
-                        try {
-                            JSONObject result = new JSONObject(response);
-                            JSONArray indexes = result.getJSONArray("results");
-
-                            for(int i = 0; i < indexes.length(); i++) {
-                                JSONObject resultObject = (JSONObject) indexes.get(i);
-                                if (resultObject.getInt("number") != 404) {
-                                    results.add(db.getComic(resultObject.getInt("number")));
-                                    loadedComics.add(resultObject.getInt("number"));
-                                }
-                            }
-                        }
-                        catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                        for(XKCDComicBean supplementalResult : addSearchData(queryString)) {
-                            if(!loadedComics.contains(supplementalResult.getNumber())) {
-                                results.add(supplementalResult);
-                            }
-                        }
-                        loadingProgress.setVisibility(View.GONE);
-                        setAdapter(results);
-                    }
-                },
-                new Response.ErrorListener()
-                {
-                    @Override
-                    public void onErrorResponse(VolleyError error)
-                    {
-                        results.addAll(addSearchData(queryString));
-                        loadingProgress.setVisibility(View.GONE);
-                        setAdapter(results);
-                    }
-                }) {
-            @Override
-            protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<>();
-                params.put("search", queryString);
-                return params;
-            }
-        };
-        msRequestQueue.addToRequestQueue(strRequest, ComicSearchResults.this);
+        setAdapter(db.searchComic(query));
     }
 
     private void setAdapter(List<XKCDComicBean> results) {

@@ -1,37 +1,43 @@
 package com.marshmallowsocks.xkcd.activities;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.Build;
+import android.os.Bundle;
+import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.FragmentStatePagerAdapter;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentStatePagerAdapter;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
-import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.util.SparseArray;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
-
-import android.view.animation.AlphaAnimation;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -46,30 +52,31 @@ import com.android.volley.toolbox.StringRequest;
 import com.github.chrisbanes.photoview.PhotoView;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.FirebaseMessaging;
-
 import com.like.LikeButton;
 import com.like.OnLikeListener;
+import com.marshmallowsocks.xkcd.R;
 import com.marshmallowsocks.xkcd.fragments.ComicFragment;
 import com.marshmallowsocks.xkcd.fragments.ComicScrollCarouselLayout;
-import com.marshmallowsocks.xkcd.util.core.MSShakeDetector;
-import com.marshmallowsocks.xkcd.util.core.MSXkcdViewPager;
-import com.marshmallowsocks.xkcd.R;
 import com.marshmallowsocks.xkcd.util.constants.Constants;
 import com.marshmallowsocks.xkcd.util.core.MSNewComicReceiver;
-
+import com.marshmallowsocks.xkcd.util.core.MSShakeDetector;
 import com.marshmallowsocks.xkcd.util.core.MSXkcdDatabase;
+import com.marshmallowsocks.xkcd.util.core.MSXkcdViewPager;
 import com.marshmallowsocks.xkcd.util.http.MSRequestQueue;
 import com.marshmallowsocks.xkcd.util.msxkcd.XKCDComicBean;
-
 import com.nightonke.boommenu.Animation.BoomEnum;
+import com.nightonke.boommenu.BoomButtons.BoomButton;
 import com.nightonke.boommenu.BoomButtons.ButtonPlaceAlignmentEnum;
 import com.nightonke.boommenu.BoomButtons.ButtonPlaceEnum;
 import com.nightonke.boommenu.BoomButtons.HamButton;
 import com.nightonke.boommenu.BoomButtons.OnBMClickListener;
+import com.nightonke.boommenu.BoomButtons.TextOutsideCircleButton;
 import com.nightonke.boommenu.BoomMenuButton;
 import com.nightonke.boommenu.ButtonEnum;
+import com.nightonke.boommenu.OnBoomListener;
 import com.nightonke.boommenu.Piece.PiecePlaceEnum;
-
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 import com.willowtreeapps.spruce.Spruce;
 import com.willowtreeapps.spruce.animation.DefaultAnimations;
 import com.willowtreeapps.spruce.sort.DefaultSort;
@@ -122,16 +129,47 @@ public class msxkcd extends AppCompatActivity {
     float dY;
     int lastAction;
     //end drag and drop fab
+    private static Random randomNumberGenerator;
+    //for boom menu
+    final String[] buttonNames = {
+            "ALT",
+            "FAVORITES",
+            "WHAT IF?",
+            "ALL",
+            "TOGGLE NAVIGATION BAR"
+    };
+
+    final int[] buttonImages = {
+            android.R.drawable.ic_menu_info_details,
+            R.drawable.fa_heart_on,
+            R.mipmap.what_if_logo,
+            android.R.drawable.ic_menu_gallery,
+            R.drawable.fa_toggle_off_white
+    };
+
+    final String[] buttonSubtitles = {
+            "SHOW ALT TEXT",
+            "CHECK YOUR FAVORITES",
+            "VIEW WHAT IF",
+            "SEE ALL XKCD COMICS",
+            "USE RANDOM BUTTON INSTEAD OF NAVIGATION BAR"
+    };
 
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
     }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        startActivity(new Intent(this, MSXkcdIntro.class));
+        randomNumberGenerator = new Random();
+        if(!getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE).contains(Constants.FIRST_TIME_FLAG)) {
+            SharedPreferences preferences = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putBoolean(Constants.FIRST_TIME_FLAG, true);
+            editor.apply();
+            startActivity(new Intent(this, MSXkcdIntro.class));
+        }
         setContentView(R.layout.activity_msxkcd);
         CalligraphyConfig.initDefault(new CalligraphyConfig.Builder()
                 .setDefaultFontPath("fonts/xkcd.otf")
@@ -150,6 +188,7 @@ public class msxkcd extends AppCompatActivity {
             }
         });
         //end shakes
+
         //TOOLBAR INIT
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         Spannable appName = new SpannableString(Constants.APP_NAME);
@@ -158,143 +197,46 @@ public class msxkcd extends AppCompatActivity {
         toolbar.setTitle(appName);
 
         final FloatingActionButton randomFab = (FloatingActionButton) findViewById(R.id.randomFab);
-        randomFab.setRippleColor(Color.parseColor("#ffffff"));
+        View.OnLongClickListener enableDrag = new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                randomFab.setOnTouchListener(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View view, MotionEvent event) {
+                        switch (event.getActionMasked()) {
+                            case MotionEvent.ACTION_DOWN:
+                                dX = view.getX() - event.getRawX();
+                                dY = view.getY() - event.getRawY();
+                                lastAction = MotionEvent.ACTION_DOWN;
+                                break;
+
+                            case MotionEvent.ACTION_MOVE:
+                                view.setY(event.getRawY() + dY);
+                                view.setX(event.getRawX() + dX);
+                                lastAction = MotionEvent.ACTION_MOVE;
+                                break;
+
+                            case MotionEvent.ACTION_UP:
+                                randomFab.setOnTouchListener(null);
+                                break;
+
+                            default:
+                                return false;
+                        }
+                        return true;
+                    }
+                });
+                return false;
+            }
+        };
+        randomFab.setOnLongClickListener(enableDrag);
         randomFab.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 randomButtonAction();
             }
         });
-        randomFab.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent event) {
-                switch (event.getActionMasked()) {
-                    case MotionEvent.ACTION_DOWN:
-                        dX = view.getX() - event.getRawX();
-                        dY = view.getY() - event.getRawY();
-                        lastAction = MotionEvent.ACTION_DOWN;
-                        break;
 
-                    case MotionEvent.ACTION_MOVE:
-                        view.setY(event.getRawY() + dY);
-                        view.setX(event.getRawX() + dX);
-                        lastAction = MotionEvent.ACTION_MOVE;
-                        break;
-
-                    case MotionEvent.ACTION_UP:
-                        if (lastAction == MotionEvent.ACTION_DOWN){
-                            randomFab.performClick();
-                        }
-                        break;
-
-                    default:
-                        return false;
-                }
-                return true;
-            }
-        });
-        String[] buttonNames = {
-                "ALT",
-                "FAVORITES",
-                "WHAT IF?",
-                "ALL",
-                "TOGGLE NAVIGATION BAR",
-                "SETTINGS"
-        };
-
-        int[] buttonImages = {
-             android.R.drawable.ic_menu_info_details,
-             R.drawable.fa_heart_on,
-             android.R.drawable.ic_menu_help,
-             android.R.drawable.ic_menu_gallery,
-             android.R.drawable.ic_input_add,
-             android.R.drawable.ic_menu_preferences
-        };
-        BoomMenuButton bmb = (BoomMenuButton) toolbar.findViewById(R.id.action_bar_left_bmb);
-        bmb.setButtonEnum(ButtonEnum.Ham);
-        bmb.setBoomEnum(BoomEnum.HORIZONTAL_THROW_1);
-        bmb.setPiecePlaceEnum(PiecePlaceEnum.HAM_6);
-        bmb.setButtonPlaceEnum(ButtonPlaceEnum.HAM_6);
-        for (int i = 0; i < bmb.getButtonPlaceEnum().buttonNumber(); i++) {
-            bmb.addBuilder(new HamButton.Builder()
-                    //button attributes
-                    .pieceColorRes(R.color.colorPrimaryLight)
-                    .normalColorRes(R.color.colorPrimary)
-                    .highlightedColorRes(android.R.color.white)
-                    //text attributes
-                    .normalText(buttonNames[i])
-                    .typeface(TypefaceUtils.load(getAssets(), "fonts/xkcd.otf"))
-                    .highlightedColorRes(R.color.colorPrimaryDark)
-                    .normalImageRes(buttonImages[i])
-                    //set up actions
-                    .listener(new OnBMClickListener() {
-                        @Override
-                        public void onBoomButtonClick(int index) {
-                            switch(index) {
-                                case 0:
-                                    toggleAltText();
-                                    break;
-                                case 1:
-                                    Intent favoriteIntent = new Intent(msxkcd.this, ComicSearchResults.class);
-                                    favoriteIntent.setAction(Constants.FAVORITE_KEY);
-                                    startActivity(favoriteIntent);
-                                    break;
-                                case 2:
-                                    Intent whatIfIntent = new Intent(msxkcd.this, WhatIf.class);
-                                    startActivity(whatIfIntent);
-                                    break;
-                                case 3:
-                                    Intent allComics = new Intent(msxkcd.this, ComicSearchResults.class);
-                                    allComics.setAction(Constants.ALL_COMICS);
-                                    startActivity(allComics);
-                                    break;
-                                case 4:
-                                    if(buttonBar.getVisibility() == View.VISIBLE) {
-                                        new Spruce
-                                                .SpruceBuilder(buttonBar)
-                                                .sortWith(new DefaultSort(50L))
-                                                .animateWith(new Animator[]{DefaultAnimations.fadeAwayAnimator(buttonBar, 400)})
-                                                .start()
-                                                .addListener(new Animator.AnimatorListener() {
-                                                    @Override
-                                                    public void onAnimationStart(Animator animation) {
-
-                                                    }
-
-                                                    @Override
-                                                    public void onAnimationEnd(Animator animation) {
-                                                        buttonBar.setVisibility(View.GONE);
-                                                        randomFab.show();
-                                                    }
-
-                                                    @Override
-                                                    public void onAnimationCancel(Animator animation) {
-
-                                                    }
-
-                                                    @Override
-                                                    public void onAnimationRepeat(Animator animation) {
-
-                                                    }
-                                                });
-                                    }
-                                    else {
-                                        buttonBar.setVisibility(View.VISIBLE);
-                                        new Spruce
-                                            .SpruceBuilder(buttonBar)
-                                            .sortWith(new DefaultSort(50L))
-                                            .animateWith(DefaultAnimations.fadeInAnimator(buttonBar, 400)).start();
-                                        randomFab.hide();
-                                    }
-                                    break;
-                                case 5:
-                                    startActivity(new Intent(msxkcd.this, MSXkcdIntro.class));
-                            }
-                        }
-                    })
-            );
-        }
-
-        bmb.setButtonPlaceAlignmentEnum(ButtonPlaceAlignmentEnum.TR);
+        setupBoomMenu(toolbar);
         LikeButton likeButton = (LikeButton) toolbar.findViewById(R.id.likeButton);
         likeButton.setOnLikeListener(new OnLikeListener() {
             @Override
@@ -303,7 +245,6 @@ public class msxkcd extends AppCompatActivity {
                 SharedPreferences.Editor editor = preferences.edit();
                 MSXkcdDatabase db = new MSXkcdDatabase(msxkcd.this);
 
-                //noinspection StatementWithEmptyBody
                 if(db.contains(which)) {
                     currentComic = db.getComic(which);
                     JSONObject representation = new JSONObject();
@@ -350,6 +291,21 @@ public class msxkcd extends AppCompatActivity {
                 onSearchRequested();
             }
         });
+        ImageButton saveButton = (ImageButton) toolbar.findViewById(R.id.saveToGalleryButton);
+        saveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int permissionCheck = ContextCompat.checkSelfPermission(msxkcd.this,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                if(permissionCheck != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(
+                            msxkcd.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, Constants.WRITE_EXTERNAL_STORAGE);
+                }
+                else {
+                    saveImageToGallery();
+                }
+            }
+        });
         setSupportActionBar(toolbar);
         //END TOOLBAR INIT
 
@@ -360,6 +316,7 @@ public class msxkcd extends AppCompatActivity {
         tagMap = new SparseArray<>();
         FirebaseApp.initializeApp(this);
         FirebaseMessaging.getInstance().subscribeToTopic(Constants.NEW_XKCD);
+        FirebaseMessaging.getInstance().subscribeToTopic(Constants.NEW_WHAT_IF);
         newComicReceiver = new MSNewComicReceiver(viewGroup, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -370,10 +327,20 @@ public class msxkcd extends AppCompatActivity {
                 }
                 mViewPager.setCurrentItem(max);
             }
+        }, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TextView altText = (TextView) findViewById(R.id.altText);
+                if(altText.getVisibility() == View.VISIBLE) {
+                    ComicFragment current = tagMap.get(mViewPager.getCurrentItem());
+                    current.toggleAltText(current.getView());
+                }
+                startActivity(new Intent(msxkcd.this, WhatIf.class));
+            }
         });
         IntentFilter newComicFilter = new IntentFilter();
         newComicFilter.addAction(Constants.NEW_COMIC_ADDED);
-
+        newComicFilter.addAction(Constants.NEW_WHAT_IF_ADDED);
         LocalBroadcastManager.getInstance(this).registerReceiver(newComicReceiver, newComicFilter);
         isFromSearch = false;
         if(getIntent() != null) {
@@ -413,7 +380,99 @@ public class msxkcd extends AppCompatActivity {
             setAdapter();
         }
     }
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        ImageButton searchButton = (ImageButton) findViewById(R.id.searchButton);
+        ImageButton saveButton = (ImageButton) findViewById(R.id.saveToGalleryButton);
+        BoomMenuButton oldBmb = (BoomMenuButton) toolbar.findViewById(R.id.action_bar_left_bmb);
+        Toolbar.LayoutParams searchParams = (Toolbar.LayoutParams) searchButton.getLayoutParams();
+        Toolbar.LayoutParams saveParams = (Toolbar.LayoutParams) saveButton.getLayoutParams();
+        Toolbar.LayoutParams oldBmbLayoutParams = (Toolbar.LayoutParams) oldBmb.getLayoutParams();
+        toolbar.removeView(oldBmb);
+        toolbar.removeView(searchButton);
+        toolbar.removeView(saveButton);
+        BoomMenuButton bmb = new BoomMenuButton(this);
+        bmb.setLayoutParams(oldBmbLayoutParams);
+        bmb.setTop(0);
+        bmb.setBackgroundEffect(false);
+        bmb.setBackgroundColor(Color.parseColor("#6e7b91"));
+        bmb.setShadowColor(Color.parseColor("#6e7b91"));
+        bmb.setFrames(120);
+        bmb.setHideDelay(0);
+        bmb.setHideDuration(100);
+        bmb.setRotateDegree(1080);
+        bmb.setShowDelay(0);
+        bmb.setShowDuration(200);
+        bmb.setId(R.id.action_bar_left_bmb);
+        toolbar.addView(bmb);
+        ImageButton newSearchButton = new ImageButton(this);
+        newSearchButton.setId(R.id.searchButton);
+        newSearchButton.setBackground(getResources().getDrawable(R.drawable.button_menu));
+        newSearchButton.setImageResource(android.R.drawable.ic_menu_search);
+        newSearchButton.setLayoutParams(searchParams);
+        newSearchButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onSearchRequested();
+            }
+        });
+        toolbar.addView(newSearchButton);
+        ImageButton newSaveButton = new ImageButton(this);
+        newSaveButton.setId(R.id.saveToGalleryButton);
+        newSaveButton.setBackground(getResources().getDrawable(R.drawable.button_menu));
+        newSaveButton.setImageResource(android.R.drawable.ic_menu_save);
+        newSaveButton.setLayoutParams(saveParams);
+        newSaveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int permissionCheck = ContextCompat.checkSelfPermission(msxkcd.this,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                if(permissionCheck != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(
+                            msxkcd.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, Constants.WRITE_EXTERNAL_STORAGE);
+                }
+                else {
+                    saveImageToGallery();
+                }
+            }
+        });
+        toolbar.addView(newSaveButton);
+        setupBoomMenu(toolbar);
+        mViewPager.invalidate();
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        IntentFilter newComicFilter = new IntentFilter();
+        newComicFilter.addAction(Constants.NEW_COMIC_ADDED);
 
+        LocalBroadcastManager.getInstance(this).registerReceiver(newComicReceiver, newComicFilter);
+        mSensorManager.registerListener(msShakeDetector,
+                mAccelerometer,
+                SensorManager.SENSOR_DELAY_UI
+        );
+
+    }
+    @Override
+    protected void onPause() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(newComicReceiver);
+        mSensorManager.unregisterListener(msShakeDetector);
+        super.onPause();
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case Constants.WRITE_EXTERNAL_STORAGE:
+                if ((grantResults.length > 0) && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    saveImageToGallery();
+                }
+                break;
+            default:
+                break;
+        }
+    }
     private void setFavoriteCheckListener() {
         mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
@@ -454,7 +513,6 @@ public class msxkcd extends AppCompatActivity {
             }
         });
     }
-    
     private void setAdapter() {
         if(!isFromSearch) {
             which = max - 1;
@@ -471,33 +529,13 @@ public class msxkcd extends AppCompatActivity {
         else {
             mViewPager.setCurrentItem(which - 1);
             isFavorite(which);
+            toggleButtonBar(true);
             isFromSearch = false;
         }
 
         mComicFragmentAdapter.notifyDataSetChanged();
         setFavoriteCheckListener();
     }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        IntentFilter newComicFilter = new IntentFilter();
-        newComicFilter.addAction(Constants.NEW_COMIC_ADDED);
-
-        LocalBroadcastManager.getInstance(this).registerReceiver(newComicReceiver, newComicFilter);
-        mSensorManager.registerListener(msShakeDetector,
-                mAccelerometer,
-                SensorManager.SENSOR_DELAY_UI
-        );
-
-    }
-    @Override
-    protected void onPause() {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(newComicReceiver);
-        mSensorManager.unregisterListener(msShakeDetector);
-        super.onPause();
-    }
-
     public void toggleAltText() {
         View rootView = tagMap.get(mViewPager.getCurrentItem()).getView();
         if(rootView == null) {
@@ -585,7 +623,6 @@ public class msxkcd extends AppCompatActivity {
                 });
         msRequestQueue.addToRequestQueue(strRequest, msxkcd.this);
     }
-
     private void toggleNavigationState(String type) {
         float prevAlpha;
         float nextAlpha;
@@ -619,6 +656,192 @@ public class msxkcd extends AppCompatActivity {
         previousButton.setEnabled(prevEnabled);
         nextButton.setEnabled(nextEnabled);
         lastButton.setEnabled(nextEnabled);
+    }
+    private void setupBoomMenu(Toolbar toolbar) {
+        final BoomMenuButton bmb = (BoomMenuButton) toolbar.findViewById(R.id.action_bar_left_bmb);
+        final FloatingActionButton randomFab = (FloatingActionButton) findViewById(R.id.randomFab);
+
+        //lock orientation on boom
+        bmb.setOnBoomListener(new OnBoomListener() {
+            @Override
+            public void onClicked(int index, BoomButton boomButton) {
+
+            }
+
+            @Override
+            public void onBackgroundClick() {
+
+            }
+
+            @Override
+            public void onBoomWillHide() {
+
+            }
+
+            @Override
+            public void onBoomDidHide() {
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+            }
+
+            @Override
+            public void onBoomWillShow() {
+
+            }
+
+            @Override
+            public void onBoomDidShow() {
+                switch (getWindowManager().getDefaultDisplay().getRotation()) {
+                    case Surface.ROTATION_0:
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                        break;
+                    case Surface.ROTATION_90:
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                        break;
+                    case Surface.ROTATION_180:
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+                        break;
+                    case Surface.ROTATION_270:
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+                        break;
+                }
+            }
+        });
+        OnBMClickListener listener = new OnBMClickListener() {
+            @Override
+            public void onBoomButtonClick(int index) {
+                switch(index) {
+                    case 0:
+                        toggleAltText();
+                        break;
+                    case 1:
+                        Intent favoriteIntent = new Intent(msxkcd.this, ComicSearchResults.class);
+                        favoriteIntent.setAction(Constants.FAVORITE_KEY);
+                        startActivity(favoriteIntent);
+                        break;
+                    case 2:
+                        Intent whatIfIntent = new Intent(msxkcd.this, WhatIf.class);
+                        startActivity(whatIfIntent);
+                        break;
+                    case 3:
+                        Intent allComics = new Intent(msxkcd.this, ComicSearchResults.class);
+                        allComics.setAction(Constants.ALL_COMICS);
+                        startActivity(allComics);
+                        break;
+                    case 4:
+                        if(buttonBar.getVisibility() == View.VISIBLE) {
+                            new Spruce
+                                    .SpruceBuilder(buttonBar)
+                                    .sortWith(new DefaultSort(50L))
+                                    .animateWith(new Animator[]{DefaultAnimations.fadeAwayAnimator(buttonBar, 400)})
+                                    .start()
+                                    .addListener(new Animator.AnimatorListener() {
+                                        @Override
+                                        public void onAnimationStart(Animator animation) {
+
+                                        }
+
+                                        @Override
+                                        public void onAnimationEnd(Animator animation) {
+                                            buttonBar.setVisibility(View.GONE);
+                                            buttonSubtitles[4] = "USE NAVIGATION BAR INSTEAD OF RANDOM BUTTON";
+                                            buttonImages[4] = R.drawable.fa_toggle_on_white;
+                                            switch(getResources().getConfiguration().orientation) {
+                                                case 1:
+                                                    ((HamButton.Builder)bmb.getBuilder(4)).subNormalText(buttonSubtitles[4]);
+                                                    ((HamButton.Builder)bmb.getBuilder(4)).normalImageRes(buttonImages[4]);
+                                                    break;
+                                                case 2:
+                                                    ((TextOutsideCircleButton.Builder)bmb.getBuilder(4)).normalImageRes(buttonImages[4]);
+                                                    break;
+                                            }
+                                            randomFab.show();
+                                        }
+
+                                        @Override
+                                        public void onAnimationCancel(Animator animation) {
+
+                                        }
+
+                                        @Override
+                                        public void onAnimationRepeat(Animator animation) {
+
+                                        }
+                                    });
+                        }
+                        else {
+                            buttonBar.setVisibility(View.VISIBLE);
+                            buttonSubtitles[4] = "USE RANDOM BUTTON INSTEAD OF NAVIGATION BAR";
+                            buttonImages[4] = R.drawable.fa_toggle_off_white;
+                            switch(getResources().getConfiguration().orientation) {
+                                case 1:
+                                    ((HamButton.Builder)bmb.getBuilder(4)).subNormalText(buttonSubtitles[4]);
+                                    ((HamButton.Builder)bmb.getBuilder(4)).normalImageRes(buttonImages[4]);
+                                    break;
+                                case 2:
+                                    ((TextOutsideCircleButton.Builder)bmb.getBuilder(4)).normalImageRes(buttonImages[4]);
+                                    break;
+                            }
+                            new Spruce
+                                    .SpruceBuilder(buttonBar)
+                                    .sortWith(new DefaultSort(50L))
+                                    .animateWith(DefaultAnimations.fadeInAnimator(buttonBar, 400)).start();
+                            randomFab.hide();
+                        }
+                        break;
+                }
+            }
+        };
+
+        switch(getResources().getConfiguration().orientation) {
+            case 1:
+                bmb.clearBuilders();
+                bmb.setButtonEnum(ButtonEnum.Ham);
+                bmb.setBoomEnum(BoomEnum.HORIZONTAL_THROW_1);
+                bmb.setPiecePlaceEnum(PiecePlaceEnum.HAM_5);
+                bmb.setButtonPlaceEnum(ButtonPlaceEnum.HAM_5);
+                for (int i = 0; i < bmb.getButtonPlaceEnum().buttonNumber(); i++) {
+                    bmb.addBuilder(new HamButton.Builder()
+                            //button attributes
+                            .pieceColorRes(R.color.colorPrimaryLight)
+                            .normalColorRes(R.color.colorPrimary)
+                            .highlightedColorRes(android.R.color.white)
+                            //text attributes
+                            .normalText(buttonNames[i])
+                            .typeface(TypefaceUtils.load(getAssets(), "fonts/xkcd.otf"))
+                            .highlightedColorRes(R.color.colorPrimaryDark)
+                            .subNormalText(buttonSubtitles[i])
+                            .subTypeface(TypefaceUtils.load(getAssets(), "fonts/xkcd.otf"))
+                            .normalImageRes(buttonImages[i])
+                            //set up actions
+                            .listener(listener)
+                    );
+                }
+                bmb.setButtonPlaceAlignmentEnum(ButtonPlaceAlignmentEnum.TR);
+                break;
+            case 2:
+                bmb.clearBuilders();
+                bmb.setButtonEnum(ButtonEnum.TextOutsideCircle);
+                bmb.setBoomEnum(BoomEnum.HORIZONTAL_THROW_1);
+                bmb.setPiecePlaceEnum(PiecePlaceEnum.DOT_5_1);
+                bmb.setButtonPlaceEnum(ButtonPlaceEnum.Horizontal);
+                for (int i = 0; i < 5; i++) {
+                    bmb.addBuilder(new TextOutsideCircleButton.Builder()
+                            //button attributes
+                            .pieceColorRes(R.color.colorPrimaryLight)
+                            .normalColorRes(R.color.colorPrimary)
+                            .highlightedColorRes(android.R.color.white)
+                            //text attributes
+                            .normalText(buttonNames[i])
+                            .typeface(TypefaceUtils.load(getAssets(), "fonts/xkcd.otf"))
+                            .highlightedColorRes(R.color.colorPrimaryDark)
+                            .normalImageRes(buttonImages[i])
+                            //set up actions
+                            .listener(listener)
+                    );
+                }
+                bmb.setButtonPlaceAlignmentEnum(ButtonPlaceAlignmentEnum.Top);
+                break;
+        }
     }
     private void setupBottomNavigationBar() {
         previousButton.setOnClickListener(new View.OnClickListener() {
@@ -733,12 +956,13 @@ public class msxkcd extends AppCompatActivity {
         lastButton.setEnabled(false);
         lastButton.setAlpha(0.5f);
     }
-
     private void randomButtonAction() {
-        Random randomNumberGenerator = new Random();
-
-        which = randomNumberGenerator.nextInt(max) + 1;
-
+        Integer temp = -1;
+        temp = randomNumberGenerator.nextInt(max) + 1;
+        while(temp.intValue() == which.intValue()) {
+            temp = randomNumberGenerator.nextInt(max) + 1;
+        }
+        which = temp;
         if (which == 1) {
             previousButton.setEnabled(false);
             firstButton.setEnabled(false);
@@ -790,29 +1014,6 @@ public class msxkcd extends AppCompatActivity {
                 String.format(Constants.FAVORITE_KEY, which.toString())
         ));
     }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        //getMenuInflater().inflate(R.menu.menu_msxkcd, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
     public void toggleButtonBar(boolean toggle) {
         LinearLayout buttonBar = (LinearLayout) findViewById(R.id.buttonBar);
         RelativeLayout mainContainer = (RelativeLayout) findViewById(R.id.mainContainer);
@@ -843,7 +1044,28 @@ public class msxkcd extends AppCompatActivity {
             }
         }
     }
+    private void saveImageToGallery() {
+        MSXkcdDatabase db = new MSXkcdDatabase(msxkcd.this);
+        final XKCDComicBean comic = db.getComic(which);
+        Target target = new Target() {
+            @Override
+            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, comic.getTitle(), null);
+                Snackbar.make(findViewById(R.id.mainContainer), "Comic saved to gallery".toUpperCase(), Snackbar.LENGTH_SHORT).show();
+            }
 
+            @Override
+            public void onBitmapFailed(Drawable errorDrawable) {
+                Snackbar.make(findViewById(R.id.mainContainer), "Could not save comic to gallery".toUpperCase(), Snackbar.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+            }
+        };
+        Picasso.with(msxkcd.this).load(comic.getImageUrl()).into(target);
+    }
     private class ComicFragmentAdapter extends FragmentStatePagerAdapter
                     implements ViewPager.PageTransformer {
         final static float BIG_SCALE = 1.0f;

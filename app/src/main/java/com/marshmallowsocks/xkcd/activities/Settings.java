@@ -7,19 +7,17 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 
 import com.github.paolorotolo.appintro.AppIntro;
-import com.github.paolorotolo.appintro.AppIntroFragment;
 import com.marshmallowsocks.xkcd.R;
+import com.marshmallowsocks.xkcd.fragments.SettingsFragment;
 
 import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 /**
- * Created by marshmallowsocks on 5/11/2017.
- * first time tutorial
+ * Created by vatsa on 5/14/17.
  */
 
-public class MSXkcdIntro extends AppIntro {
-
+public class Settings extends AppIntro {
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
@@ -37,10 +35,7 @@ public class MSXkcdIntro extends AppIntro {
         );
         // Instead of fragments, you can also use our default slide
         // Just set a title, description, background and image. AppIntro will do the rest.
-        addSlide(AppIntroFragment.newInstance("MSXKCD", "A BEAUTIFUL XKCD VIEWER", R.drawable.loading_velociraptor, Color.parseColor("#6E7B91")));
-        addSlide(AppIntroFragment.newInstance("TOOLBAR", "Click the heart to favorite comics\nClick the search icon to search for comics\n".toUpperCase(), R.drawable.appintro_toolbar, Color.parseColor("#6E7B91")));
-        addSlide(AppIntroFragment.newInstance("SIDEBAR", "Click any relevant options to do things; toggle the navigation bar here".toUpperCase(), R.drawable.appintro_sidemenu, Color.parseColor("#6E7B91")));
-        addSlide(AppIntroFragment.newInstance("NAVIGATION BAR", "Use either a standard navigation bar or only a random button".toUpperCase(), R.drawable.appintro_navbar, Color.parseColor("#6E7B91")));
+        addSlide(SettingsFragment.newInstance());
         // OPTIONAL METHODS
         // Override bar/separator color.
         setBarColor(Color.parseColor("#6E7B91"));

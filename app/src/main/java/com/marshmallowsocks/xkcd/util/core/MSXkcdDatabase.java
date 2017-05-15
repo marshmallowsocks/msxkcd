@@ -8,8 +8,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 
 import com.marshmallowsocks.xkcd.util.constants.Constants;
-import com.marshmallowsocks.xkcd.util.whatif.WhatIfSearchBean;
 import com.marshmallowsocks.xkcd.util.msxkcd.XKCDComicBean;
+import com.marshmallowsocks.xkcd.util.whatif.WhatIfSearchBean;
 import com.readystatesoftware.sqliteasset.SQLiteAssetHelper;
 
 import java.util.ArrayList;
@@ -29,14 +29,12 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
     }
 
     public List<XKCDComicBean> searchComic(String queryString) {
-
         SQLiteDatabase db = getReadableDatabase();
-        //SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
         List<XKCDComicBean> result = new ArrayList<>();
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
 
         String [] sqlSelect = {"num", Constants.COMIC_URL, Constants.COMIC_TITLE};
-        String [] whereArgs = {"%" + queryString + "%", queryString };
+        String [] whereArgs = {"%" + queryString + "%", queryString, "%" + queryString + "%"};
 
         qb.setTables(TABLE_NAME);
         Cursor c = qb.query(db, sqlSelect, Constants.SEARCH_QUERY, whereArgs, null, null, null);
@@ -51,6 +49,8 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
                 result.add(resultRow);
             } while (c.moveToNext());
         }
+
+        c.close();
         return result;
     }
 
@@ -74,6 +74,8 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
                 result.add(resultRow);
             } while (c.moveToNext());
         }
+
+        c.close();
         return result;
     }
 
@@ -97,6 +99,8 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
                 result.add(resultRow);
             } while (c.moveToNext());
         }
+
+        c.close();
         return result;
     }
 
@@ -127,21 +131,24 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
     public boolean contains(Integer num) {
         SQLiteDatabase db = getReadableDatabase();
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
-
+        boolean doesContain;
         String [] sqlSelect = {"num"};
         String whereClause = "num = ?";
         String [] whereArgs = { num.toString() };
 
         qb.setTables(TABLE_NAME);
         Cursor c = qb.query(db, sqlSelect, whereClause, whereArgs, null, null, null);
-
         c.moveToFirst();
-        return c.getCount() != 0;
+        doesContain = (c.getCount() != 0);
+
+        c.close();
+        return doesContain;
     }
 
     public boolean containsWhatIf(Integer num) {
         SQLiteDatabase db = getReadableDatabase();
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+        boolean doesContain;
 
         String [] sqlSelect = {"number"};
         String whereClause = "number = ?";
@@ -151,7 +158,10 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
         Cursor c = qb.query(db, sqlSelect, whereClause, whereArgs, null, null, null);
 
         c.moveToFirst();
-        return c.getCount() != 0;
+        doesContain = (c.getCount() != 0);
+
+        c.close();
+        return doesContain;
     }
 
     public boolean addWhatIfMetadata(WhatIfSearchBean comicData) {
@@ -201,6 +211,33 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
 
             } while (c.moveToNext());
         }
+
+        c.close();
+        return result;
+    }
+
+    public WhatIfSearchBean getWhatIf(Integer index) {
+        SQLiteDatabase db = getReadableDatabase();
+        SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+        WhatIfSearchBean result = new WhatIfSearchBean();
+
+        String [] sqlSelect = { "number", Constants.COMIC_TITLE };
+        String whereClause = "number = ?";
+        String [] whereArgs = { index.toString() };
+
+        qb.setTables(WHAT_IF_TABLE_NAME);
+        Cursor c = qb.query(db, sqlSelect, whereClause, whereArgs, null, null, null);
+
+        c.moveToFirst();
+        if(c.getCount() != 0) {
+            do {
+                result.setNumber(c.getInt(c.getColumnIndex("number")));
+                result.setTitle(c.getString(c.getColumnIndex(Constants.COMIC_TITLE)));
+
+            } while (c.moveToNext());
+        }
+
+        c.close();
         return result;
     }
 
@@ -223,6 +260,8 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
                 result.add(resultRow);
             } while (c.moveToNext());
         }
+
+        c.close();
         return result;
     }
 

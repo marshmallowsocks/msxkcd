@@ -17,16 +17,25 @@ import com.marshmallowsocks.xkcd.util.constants.Constants;
 
 public class MSNewComicReceiver extends BroadcastReceiver {
     private View msView;
-    private View.OnClickListener msCallback;
-    public MSNewComicReceiver(View view, View.OnClickListener callback) {
+    private View.OnClickListener msComicCallback;
+    private View.OnClickListener msWhatIfCallback;
+    public MSNewComicReceiver(View view, View.OnClickListener comicCallback, View.OnClickListener whatIfCallback) {
         msView = view;
-        msCallback = callback;
+        msComicCallback = comicCallback;
+        msWhatIfCallback = whatIfCallback;
     }
     @Override
     public void onReceive(Context context, Intent intent) {
         if(Constants.NEW_COMIC_ADDED.equals(intent.getAction())) {
             Snackbar newComicSnackbar = Snackbar.make(msView, Constants.NEW_COMIC_ADDED.toUpperCase() + intent.getStringExtra(Constants.NEW_COMIC_ADDED).toUpperCase(), Snackbar.LENGTH_INDEFINITE);
-            newComicSnackbar.setActionTextColor(Color.WHITE).setAction("Go", msCallback);
+            newComicSnackbar.setActionTextColor(Color.WHITE).setAction("Go", msComicCallback);
+            TextView newComicBody = (TextView) newComicSnackbar.getView().findViewById(android.support.design.R.id.snackbar_text);
+            newComicBody.setMaxLines(15);
+            newComicSnackbar.show();
+        }
+        if(Constants.NEW_WHAT_IF_ADDED.equals(intent.getAction())) {
+            Snackbar newComicSnackbar = Snackbar.make(msView, Constants.NEW_WHAT_IF_ADDED.toUpperCase() + intent.getStringExtra(Constants.NEW_WHAT_IF_ADDED).toUpperCase(), Snackbar.LENGTH_INDEFINITE);
+            newComicSnackbar.setActionTextColor(Color.WHITE).setAction("Go", msWhatIfCallback);
             TextView newComicBody = (TextView) newComicSnackbar.getView().findViewById(android.support.design.R.id.snackbar_text);
             newComicBody.setMaxLines(15);
             newComicSnackbar.show();

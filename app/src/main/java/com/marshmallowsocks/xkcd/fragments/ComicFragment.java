@@ -28,9 +28,12 @@ import com.marshmallowsocks.xkcd.util.constants.Constants;
 import com.marshmallowsocks.xkcd.util.core.MSXkcdDatabase;
 import com.marshmallowsocks.xkcd.util.http.MSRequestQueue;
 import com.marshmallowsocks.xkcd.util.msxkcd.XKCDComicBean;
+import com.squareup.picasso.Picasso;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import static com.bumptech.glide.load.engine.DiskCacheStrategy.SOURCE;
 
 public class ComicFragment extends Fragment {
 
@@ -81,6 +84,7 @@ public class ComicFragment extends Fragment {
         final Button closeButton = (Button) rootView.findViewById(R.id.closeOverlay);
         final Button explainButton = (Button) rootView.findViewById(R.id.explainButton);
         final PhotoView comicHolder = (PhotoView) rootView.findViewById(R.id.comicHolder);
+        final TextView isInteractive = (TextView) rootView.findViewById(R.id.interactiveComic);
 
         comicHolder.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -89,19 +93,21 @@ public class ComicFragment extends Fragment {
                 return false;
             }
         });
-
+        isInteractive.setVisibility(View.GONE);
         if(currentComic.getImageUrl().endsWith(".gif")) {
             Glide.with(getContext())
                  .load(currentComic.getImageUrl())
                  .asGif()
-                 //.thumbnail(Glide.with(getContext()).load(Constants.LOADING_URL).asGif())
+                 .diskCacheStrategy(SOURCE)
                  .into(comicHolder);
         }
+        else if(currentComic.getImageUrl().endsWith(".png")) {
+            Picasso.with(getContext())
+                    .load(currentComic.getImageUrl())
+                    .into(comicHolder);
+        }
         else {
-            Glide.with(getContext())
-                 .load(currentComic.getImageUrl())
-                 //.thumbnail(Glide.with(this).load(Constants.LOADING_URL)).crossFade()
-                 .into(comicHolder);
+            isInteractive.setVisibility(View.VISIBLE);
         }
 
         comicHolder.setOnScaleChangeListener(new OnScaleChangedListener() {
