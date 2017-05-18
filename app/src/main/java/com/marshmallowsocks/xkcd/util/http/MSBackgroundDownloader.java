@@ -1,6 +1,7 @@
 package com.marshmallowsocks.xkcd.util.http;
 
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -10,12 +11,14 @@ import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 
 import com.marshmallowsocks.xkcd.R;
+import com.marshmallowsocks.xkcd.activities.msxkcd;
 import com.marshmallowsocks.xkcd.util.core.MSXkcdDatabase;
 import com.marshmallowsocks.xkcd.util.msxkcd.XKCDComicBean;
 import com.tonyodev.fetch.Fetch;
 import com.tonyodev.fetch.listener.FetchListener;
 import com.tonyodev.fetch.request.Request;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,7 +51,8 @@ public class MSBackgroundDownloader extends Service {
                 .setSmallIcon(R.drawable.ms_stat_msxkcd)
                 .setAutoCancel(true)
                 .setOngoing(true)
-                .setProgress(100, 0, false);
+                .setProgress(100, 0, false)
+                .setContentIntent(PendingIntent.getActivity(context, appId, new Intent(context, msxkcd.class), PendingIntent.FLAG_CANCEL_CURRENT));
         mNotifyManager.notify(appId, mBuilder.build());
         allComics = db.getAllComics();
         maxDownloadSize = allComics.size();
@@ -59,7 +63,13 @@ public class MSBackgroundDownloader extends Service {
                 completeDownloads.incrementAndGet();
                 continue;
             }
-            downloadRequests.add(new Request(comic.getImageUrl(), getFilesDir().getAbsolutePath(), "xkcd_" + comic.getNumber() + comic.getImageUrl().substring(comic.getImageUrl().length() - 4)));
+            File comicFile = new File(getFilesDir().getAbsolutePath() + "/xkcd_" + comic.getNumber() + comic.getImageUrl().substring(comic.getImageUrl().length() - 4));
+            if(!comicFile.exists()) {
+                downloadRequests.add(new Request(comic.getImageUrl(), getFilesDir().getAbsolutePath(), "xkcd_" + comic.getNumber() + comic.getImageUrl().substring(comic.getImageUrl().length() - 4)));
+            }
+            else {
+                completeDownloads.incrementAndGet();
+            }
         }
         fetchQueue.addFetchListener(new FetchListener() {
             @Override
@@ -74,9 +84,10 @@ public class MSBackgroundDownloader extends Service {
                     if (completeDownloads.intValue() == maxDownloadSize) {
                         Log.d("DOWNLOADER", "complete");
                         mBuilder.setContentText("Download complete")
-                                .setProgress(0, 0, false);
+                                .setProgress(0, 0, false)
+                                .setContentIntent(PendingIntent.getActivity(context, appId, new Intent(context, msxkcd.class), PendingIntent.FLAG_CANCEL_CURRENT));
                         mNotifyManager.notify(appId, mBuilder.build());
-                        mNotifyManager.cancel(appId);
+                        MSBackgroundDownloader.this.onDestroy();
                     }
                 }
                 if(status == Fetch.STATUS_ERROR) {
@@ -120,6 +131,7 @@ public class MSBackgroundDownloader extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        fetchQueue.release();
         db.close();
     }
 }
