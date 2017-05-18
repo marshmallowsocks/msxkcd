@@ -338,7 +338,7 @@ public class WhatIf extends AppCompatActivity {
                     newData.setNumber(which);
                     newData.setTitle(doc.getElementsByTag("h1").get(0).text());
                     if(!database.addWhatIfMetadata(newData)) {
-                        Toast.makeText(WhatIf.this, "A database error occured", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(WhatIf.this, "A database error occurred", Toast.LENGTH_SHORT).show();
                     }
                 }
                 //check if previous available:
@@ -488,7 +488,7 @@ public class WhatIf extends AppCompatActivity {
                     case Constants.WHAT_IF_TITLE:
                         paragraphContainer = new TextView(WhatIf.this);
                         paragraphContainer.setTextSize(28.0f);
-                        paragraphContainer.setTextColor(getResources().getColor(android.R.color.black));
+                        paragraphContainer.setTextColor(Color.parseColor("#000000"));
                         SpannableString spanString = new SpannableString(node.getBody());
                         spanString.setSpan(new UnderlineSpan(), 0, spanString.length(), 0);
                         spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, spanString.length(), 0);
@@ -632,7 +632,7 @@ public class WhatIf extends AppCompatActivity {
         toolbar.addView(bmb);
         ImageButton newSearchButton = new ImageButton(this);
         newSearchButton.setId(R.id.searchButton);
-        newSearchButton.setBackground(getResources().getDrawable(R.drawable.button_menu));
+        newSearchButton.setBackgroundResource(R.drawable.button_menu);
         newSearchButton.setImageResource(android.R.drawable.ic_menu_search);
         newSearchButton.setLayoutParams(searchParams);
         newSearchButton.setOnClickListener(new View.OnClickListener() {

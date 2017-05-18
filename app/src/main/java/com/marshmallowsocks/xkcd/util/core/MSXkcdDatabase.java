@@ -174,7 +174,6 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
 
             db.insert(WHAT_IF_TABLE_NAME, null, newValues);
             db.close();
-
         }
         catch(SQLException e) {
             return false;
@@ -185,7 +184,7 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
     public XKCDComicBean getComic(Integer index) {
         SQLiteDatabase db = getReadableDatabase();
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
-        XKCDComicBean result = new XKCDComicBean();
+        XKCDComicBean result = null;
 
         String [] sqlSelect = {Constants.COMIC_INDEX, Constants.COMIC_TITLE, Constants.COMIC_URL, "alt", "day", "month", "year"};
         String whereClause = "num = ?";
@@ -198,6 +197,7 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
         if(c.getCount() != 0) {
             do {
                 String date;
+                result = new XKCDComicBean();
                 result.setNumber(Integer.parseInt(c.getString(c.getColumnIndex(Constants.COMIC_INDEX))));
                 result.setTitle(c.getString(c.getColumnIndex(Constants.COMIC_TITLE)).toUpperCase());
                 result.setImageUrl(c.getString(c.getColumnIndex(Constants.COMIC_URL)));

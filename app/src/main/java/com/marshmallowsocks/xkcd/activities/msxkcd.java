@@ -33,6 +33,7 @@ import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -62,6 +63,7 @@ import com.marshmallowsocks.xkcd.util.core.MSNewComicReceiver;
 import com.marshmallowsocks.xkcd.util.core.MSShakeDetector;
 import com.marshmallowsocks.xkcd.util.core.MSXkcdDatabase;
 import com.marshmallowsocks.xkcd.util.core.MSXkcdViewPager;
+import com.marshmallowsocks.xkcd.util.http.MSBackgroundDownloader;
 import com.marshmallowsocks.xkcd.util.http.MSRequestQueue;
 import com.marshmallowsocks.xkcd.util.msxkcd.XKCDComicBean;
 import com.nightonke.boommenu.Animation.BoomEnum;
@@ -136,7 +138,8 @@ public class msxkcd extends AppCompatActivity {
             "FAVORITES",
             "WHAT IF?",
             "ALL",
-            "TOGGLE NAVIGATION BAR"
+            "TOGGLE NAVIGATION BAR",
+            "OFFLINE MODE"
     };
 
     final int[] buttonImages = {
@@ -144,7 +147,8 @@ public class msxkcd extends AppCompatActivity {
             R.drawable.fa_heart_on,
             R.mipmap.what_if_logo,
             android.R.drawable.ic_menu_gallery,
-            R.drawable.fa_toggle_off_white
+            R.drawable.fa_toggle_off_white,
+            android.R.drawable.ic_popup_sync
     };
 
     final String[] buttonSubtitles = {
@@ -152,7 +156,8 @@ public class msxkcd extends AppCompatActivity {
             "CHECK YOUR FAVORITES",
             "VIEW WHAT IF",
             "SEE ALL XKCD COMICS",
-            "USE RANDOM BUTTON INSTEAD OF NAVIGATION BAR"
+            "USE RANDOM BUTTON INSTEAD OF NAVIGATION BAR",
+            "ayy"
     };
 
     @Override
@@ -270,7 +275,8 @@ public class msxkcd extends AppCompatActivity {
                     currentComic.setJsonRepresentation(representation);
                 }
                 else {
-                    //TODO: network request
+                    getComicData(which);
+                    //TODO: Have to figure out how to commit this.
                 }
                 editor.putString(String.format(Constants.FAVORITE_KEY, which.toString()), currentComic.jsonify());
                 editor.apply();
@@ -409,7 +415,7 @@ public class msxkcd extends AppCompatActivity {
         toolbar.addView(bmb);
         ImageButton newSearchButton = new ImageButton(this);
         newSearchButton.setId(R.id.searchButton);
-        newSearchButton.setBackground(getResources().getDrawable(R.drawable.button_menu));
+        newSearchButton.setBackgroundResource(R.drawable.button_menu);
         newSearchButton.setImageResource(android.R.drawable.ic_menu_search);
         newSearchButton.setLayoutParams(searchParams);
         newSearchButton.setOnClickListener(new View.OnClickListener() {
@@ -421,7 +427,7 @@ public class msxkcd extends AppCompatActivity {
         toolbar.addView(newSearchButton);
         ImageButton newSaveButton = new ImageButton(this);
         newSaveButton.setId(R.id.saveToGalleryButton);
-        newSaveButton.setBackground(getResources().getDrawable(R.drawable.button_menu));
+        newSaveButton.setBackgroundResource(R.drawable.button_menu);
         newSaveButton.setImageResource(android.R.drawable.ic_menu_save);
         newSaveButton.setLayoutParams(saveParams);
         newSaveButton.setOnClickListener(new View.OnClickListener() {
@@ -609,8 +615,66 @@ public class msxkcd extends AppCompatActivity {
                         catch(JSONException e) {
                             Toast.makeText(msxkcd.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                         }
+                        finally {
+                            db.close();
+                        }
 
                         setAdapter();
+
+                        int previous = currentComic.getNumber() - 1;
+                        while(!db.contains(previous)) {
+                            Log.d("PREVIOUS LOOP", previous + "");
+                            getComicData(previous);
+                            previous--;
+                        }
+                    }
+                },
+                new Response.ErrorListener()
+                {
+                    @Override
+                    public void onErrorResponse(VolleyError error)
+                    {
+                        Toast.makeText(msxkcd.this, error.toString(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+        msRequestQueue.addToRequestQueue(strRequest, msxkcd.this);
+    }
+    private void getComicData(Integer comicIndex) {
+        StringRequest strRequest = new StringRequest(Request.Method.GET, String.format(Constants.URL_PATTERN, comicIndex),
+                new Response.Listener<String>()
+                {
+                    @Override
+                    public void onResponse(String response)
+                    {
+                        MSXkcdDatabase db = new MSXkcdDatabase(msxkcd.this);
+                        try {
+                            JSONObject result = new JSONObject(response);
+                            String date;
+                            currentComic = new XKCDComicBean();
+                            currentComic.setTitle(result.getString(Constants.COMIC_TITLE));
+                            currentComic.setAltText(result.getString(Constants.COMIC_EXTRA).toUpperCase());
+                            currentComic.setImageUrl(result.getString(Constants.COMIC_URL));
+                            currentComic.setNumber(result.getInt(Constants.COMIC_INDEX));
+                            currentComic.setJsonRepresentation(result);
+
+                            date = result.getString(Constants.COMIC_MONTH);
+                            date += "-" + result.getString(Constants.COMIC_DAY);
+                            date += "-" + result.getString(Constants.COMIC_YEAR);
+
+                            currentComic.setDate(date);
+
+                            if(!db.contains(currentComic.getNumber())) {
+                                if (!(db.addNewMetadata(currentComic))) {
+                                    Toast.makeText(msxkcd.this, "An error occurred with the database", Toast.LENGTH_SHORT);
+                                }
+                            }
+                        }
+                        catch(JSONException e) {
+                            Toast.makeText(msxkcd.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                        finally {
+                            db.close();
+                        }
                     }
                 },
                 new Response.ErrorListener()
@@ -788,6 +852,9 @@ public class msxkcd extends AppCompatActivity {
                             randomFab.hide();
                         }
                         break;
+                    case 5:
+                        startService(new Intent(msxkcd.this, MSBackgroundDownloader.class));
+                        break;
                 }
             }
         };
@@ -797,8 +864,8 @@ public class msxkcd extends AppCompatActivity {
                 bmb.clearBuilders();
                 bmb.setButtonEnum(ButtonEnum.Ham);
                 bmb.setBoomEnum(BoomEnum.HORIZONTAL_THROW_1);
-                bmb.setPiecePlaceEnum(PiecePlaceEnum.HAM_5);
-                bmb.setButtonPlaceEnum(ButtonPlaceEnum.HAM_5);
+                bmb.setPiecePlaceEnum(PiecePlaceEnum.HAM_6);
+                bmb.setButtonPlaceEnum(ButtonPlaceEnum.HAM_6);
                 for (int i = 0; i < bmb.getButtonPlaceEnum().buttonNumber(); i++) {
                     bmb.addBuilder(new HamButton.Builder()
                             //button attributes
@@ -957,7 +1024,7 @@ public class msxkcd extends AppCompatActivity {
         lastButton.setAlpha(0.5f);
     }
     private void randomButtonAction() {
-        Integer temp = -1;
+        Integer temp;
         temp = randomNumberGenerator.nextInt(max) + 1;
         while(temp.intValue() == which.intValue()) {
             temp = randomNumberGenerator.nextInt(max) + 1;
@@ -1000,7 +1067,7 @@ public class msxkcd extends AppCompatActivity {
             nextButton.setAlpha(1f);
             lastButton.setAlpha(1f);
         }
-
+        mViewPager.setPagingEnabled(true);
         mViewPager.setCurrentItem(which, false);
     }
     public void toggleViewPager(boolean toggle) {
@@ -1065,6 +1132,7 @@ public class msxkcd extends AppCompatActivity {
             }
         };
         Picasso.with(msxkcd.this).load(comic.getImageUrl()).into(target);
+        db.close();
     }
     private class ComicFragmentAdapter extends FragmentStatePagerAdapter
                     implements ViewPager.PageTransformer {

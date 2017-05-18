@@ -41,6 +41,7 @@ dependencies {
     compile 'com.willowtreeapps.spruce:spruce-android:1.0.0'
     compile 'uk.co.chrisjenx:calligraphy:2.2.0'
     compile 'com.github.jd-alexander:LikeButton:0.2.0'
+    compile 'com.tonyodev.fetch:fetch:1.1.1'
     compile 'com.github.chrisbanes:PhotoView:2.0.0'
     compile 'com.github.paolorotolo:appintro:4.1.0'
     compile 'com.readystatesoftware.sqliteasset:sqliteassethelper:2.0.1'
@@ -48,6 +49,7 @@ dependencies {
     compile 'org.jsoup:jsoup:1.10.2'
     compile 'com.android.support:support-v4:25.3.1'
     compile 'com.android.support:support-vector-drawable:25.3.1'
+    debugCompile 'com.amitshekhar.android:debug-db:1.0.0'
     testCompile 'junit:junit:4.12'
 }
 

@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +34,8 @@ import com.squareup.picasso.Picasso;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+
 import static com.bumptech.glide.load.engine.DiskCacheStrategy.SOURCE;
 
 public class ComicFragment extends Fragment {
@@ -41,14 +44,13 @@ public class ComicFragment extends Fragment {
     private XKCDComicBean currentComic;
     private Integer which;
     private float originalScale = 1;
-    private float errorMargin = 0.1f; //scale > 1.1 or < 0.9 is blocked.
+    private float errorMargin = 0.15f; //scale > 1.15 or < 0.85 is blocked.
 
     public ComicFragment() {
     }
 
     public void setComicContext(int which) {
         this.which = which;
-
     }
 
     @Override
@@ -94,20 +96,40 @@ public class ComicFragment extends Fragment {
             }
         });
         isInteractive.setVisibility(View.GONE);
-        if(currentComic.getImageUrl().endsWith(".gif")) {
-            Glide.with(getContext())
-                 .load(currentComic.getImageUrl())
-                 .asGif()
-                 .diskCacheStrategy(SOURCE)
-                 .into(comicHolder);
-        }
-        else if(currentComic.getImageUrl().endsWith(".png")) {
-            Picasso.with(getContext())
-                    .load(currentComic.getImageUrl())
-                    .into(comicHolder);
+        File image = new File(getContext().getFilesDir().getAbsolutePath() + "/xkcd_" + currentComic.getNumber() + currentComic.getImageUrl().substring(currentComic.getImageUrl().length() - 4));
+        String imageUrl;
+        if(image.exists()) {
+            imageUrl = "file:/" + image.getAbsolutePath();
+            Log.d("comicHolder url", imageUrl);
+            if (currentComic.getImageUrl().endsWith(".gif")) {
+                Glide.with(getContext())
+                        .load(image)
+                        .asGif()
+                        .diskCacheStrategy(SOURCE)
+                        .into(comicHolder);
+            } else if (currentComic.getImageUrl().endsWith(".png") || currentComic.getImageUrl().endsWith(".jpg")) {
+                Picasso.with(getContext())
+                        .load(image)
+                        .into(comicHolder);
+            } else {
+                isInteractive.setVisibility(View.VISIBLE);
+            }
         }
         else {
-            isInteractive.setVisibility(View.VISIBLE);
+            imageUrl = currentComic.getImageUrl();
+            if (currentComic.getImageUrl().endsWith(".gif")) {
+                Glide.with(getContext())
+                        .load(imageUrl)
+                        .asGif()
+                        .diskCacheStrategy(SOURCE)
+                        .into(comicHolder);
+            } else if (currentComic.getImageUrl().endsWith(".png") || currentComic.getImageUrl().endsWith(".jpg")) {
+                Picasso.with(getContext())
+                        .load(imageUrl)
+                        .into(comicHolder);
+            } else {
+                isInteractive.setVisibility(View.VISIBLE);
+            }
         }
 
         comicHolder.setOnScaleChangeListener(new OnScaleChangedListener() {
