@@ -97,6 +97,7 @@ public class msxkcd extends AppCompatActivity {
 
     private static Integer which = -1;
     private static Integer max = -1;
+    private static Integer downloaded = -1;
     private boolean isLastComic = false;
     private boolean isFirstComic = false;
     private XKCDComicBean currentComic;
@@ -125,6 +126,8 @@ public class msxkcd extends AppCompatActivity {
     private Sensor mAccelerometer;
     private MSShakeDetector msShakeDetector;
     //end shaking
+
+    private SharedPreferences.OnSharedPreferenceChangeListener downloadListener;
 
     //drag and drop fab
     float dX;
@@ -157,7 +160,7 @@ public class msxkcd extends AppCompatActivity {
             "VIEW WHAT IF",
             "SEE ALL XKCD COMICS",
             "USE RANDOM BUTTON INSTEAD OF NAVIGATION BAR",
-            "ayy"
+            "DOWNLOADED -/?"
     };
 
     @Override
@@ -175,6 +178,38 @@ public class msxkcd extends AppCompatActivity {
             editor.apply();
             startActivity(new Intent(this, MSXkcdIntro.class));
         }
+        if(!getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE).contains(Constants.OFFLINE_COUNT)) {
+            SharedPreferences preferences = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putInt(Constants.OFFLINE_COUNT, 0);
+            editor.apply();
+            downloaded = 0;
+        }
+        else {
+            SharedPreferences preferences = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
+            downloaded = preferences.getInt(Constants.OFFLINE_COUNT, 0);
+        }
+        downloadListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+            @Override
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                if(Constants.OFFLINE_COUNT.equals(key)) {
+                    downloaded = sharedPreferences.getInt(Constants.OFFLINE_COUNT, 0);
+                }
+                if(Constants.SYNC_IN_PROGRESS.equals(key)) {
+                    if(sharedPreferences.getBoolean(Constants.SYNC_IN_PROGRESS, false)) {
+                        buttonSubtitles[5] = "SYNC_IN_PROGRESS";
+                    }
+                    else {
+                        buttonSubtitles[5] = "DOWNLOADED -/?";
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.remove(Constants.SYNC_IN_PROGRESS);
+                        editor.apply();
+                    }
+                }
+            }
+        };
+
+        getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE).registerOnSharedPreferenceChangeListener(downloadListener);
         setContentView(R.layout.activity_msxkcd);
         CalligraphyConfig.initDefault(new CalligraphyConfig.Builder()
                 .setDefaultFontPath("fonts/xkcd.otf")
@@ -592,6 +627,7 @@ public class msxkcd extends AppCompatActivity {
                             currentComic.setDate(date);
 
                             max = result.getInt(Constants.COMIC_INDEX);
+                            setupBoomMenu(null);
                             SharedPreferences preferences = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
 
                             if(preferences.getInt(Constants.MAX, -1) < max) {
@@ -722,8 +758,17 @@ public class msxkcd extends AppCompatActivity {
         lastButton.setEnabled(nextEnabled);
     }
     private void setupBoomMenu(Toolbar toolbar) {
+        if (toolbar == null) {
+            toolbar = (Toolbar) findViewById(R.id.toolbar);
+        }
         final BoomMenuButton bmb = (BoomMenuButton) toolbar.findViewById(R.id.action_bar_left_bmb);
         final FloatingActionButton randomFab = (FloatingActionButton) findViewById(R.id.randomFab);
+
+        if(!"SYNC IN PROGRESS".equals(buttonSubtitles[5])) {
+            buttonSubtitles[5] = "DOWNLOADED -/?";
+            buttonSubtitles[5] = buttonSubtitles[5].replace("-", downloaded.toString());
+            buttonSubtitles[5] = buttonSubtitles[5].replace("?", max.toString());
+        }
 
         //lock orientation on boom
         bmb.setOnBoomListener(new OnBoomListener() {
@@ -889,9 +934,9 @@ public class msxkcd extends AppCompatActivity {
                 bmb.clearBuilders();
                 bmb.setButtonEnum(ButtonEnum.TextOutsideCircle);
                 bmb.setBoomEnum(BoomEnum.HORIZONTAL_THROW_1);
-                bmb.setPiecePlaceEnum(PiecePlaceEnum.DOT_5_1);
+                bmb.setPiecePlaceEnum(PiecePlaceEnum.DOT_6_1);
                 bmb.setButtonPlaceEnum(ButtonPlaceEnum.Horizontal);
-                for (int i = 0; i < 5; i++) {
+                for (int i = 0; i < 6; i++) {
                     bmb.addBuilder(new TextOutsideCircleButton.Builder()
                             //button attributes
                             .pieceColorRes(R.color.colorPrimaryLight)

@@ -5,6 +5,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v7.app.NotificationCompat;
@@ -12,6 +13,7 @@ import android.util.Log;
 
 import com.marshmallowsocks.xkcd.R;
 import com.marshmallowsocks.xkcd.activities.msxkcd;
+import com.marshmallowsocks.xkcd.util.constants.Constants;
 import com.marshmallowsocks.xkcd.util.core.MSXkcdDatabase;
 import com.marshmallowsocks.xkcd.util.msxkcd.XKCDComicBean;
 import com.tonyodev.fetch.Fetch;
@@ -88,6 +90,11 @@ public class MSBackgroundDownloader extends Service {
                                 .setContentIntent(PendingIntent.getActivity(context, appId, new Intent(context, msxkcd.class), PendingIntent.FLAG_CANCEL_CURRENT));
                         mNotifyManager.notify(appId, mBuilder.build());
                         MSBackgroundDownloader.this.onDestroy();
+                        SharedPreferences preferences = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = preferences.edit();
+                        editor.putInt(Constants.OFFLINE_COUNT, completeDownloads.intValue());
+                        editor.remove(Constants.SYNC_IN_PROGRESS);
+                        editor.apply();
                     }
                 }
                 if(status == Fetch.STATUS_ERROR) {
@@ -95,6 +102,10 @@ public class MSBackgroundDownloader extends Service {
                 }
             }
         });
+        SharedPreferences preferences = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean(Constants.SYNC_IN_PROGRESS, true);
+        editor.apply();
         fetchQueue.enqueue(downloadRequests);
     }
 

@@ -59,4 +59,6 @@ public final class Constants {
     public final static String SEARCH_QUERY_WHAT_IF = "title like ? or number = ?";
 
     public final static int WRITE_EXTERNAL_STORAGE = 147;
+    public final static String OFFLINE_COUNT = "offline_count";
+    public static final String SYNC_IN_PROGRESS = "sync_in_progress";
 }
