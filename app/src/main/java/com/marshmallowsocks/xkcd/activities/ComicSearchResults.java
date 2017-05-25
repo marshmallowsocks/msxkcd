@@ -10,6 +10,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.ImageButton;
@@ -30,19 +31,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import jp.wasabeef.recyclerview.adapters.ScaleInAnimationAdapter;
+import jp.wasabeef.recyclerview.adapters.SlideInBottomAnimationAdapter;
 import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 public class ComicSearchResults extends AppCompatActivity {
 
     protected RecyclerView fullList;
-    protected LinearLayoutManager layoutManager;
+    protected LinearLayoutManager linearLayoutManager;
+    protected StaggeredGridLayoutManager staggeredGridLayoutManager;
     protected MSXkcdDatabase db;
     protected MSRequestQueue msRequestQueue;
     protected Toolbar toolbar;
     private MSNewComicReceiver newComicReceiver;
-    private ImageButton sortButton;
-    private SortMode mode;
+    protected ImageButton sortButton;
+    protected ImageButton layoutButton;
+    private ComicSearchResultAdapter comicSearchResultAdapter;
+    private SortMode sortMode;
+    private LayoutMode layoutMode;
+    public enum LayoutMode {
+        LINEAR,
+        GRID
+    }
     private enum SortMode {
         ASC,
         DESC
@@ -59,21 +70,51 @@ public class ComicSearchResults extends AppCompatActivity {
         setContentView(R.layout.activity_comic_search_results);
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         sortButton = (ImageButton) toolbar.findViewById(R.id.sortButton);
+        layoutButton = (ImageButton) toolbar.findViewById(R.id.layoutButton);
+
+        layoutButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int position;
+                if(layoutMode == LayoutMode.LINEAR) {
+                    position = linearLayoutManager.findFirstCompletelyVisibleItemPosition();
+                    fullList.setLayoutManager(staggeredGridLayoutManager);
+                    layoutMode = LayoutMode.GRID;
+                }
+                else {
+                    // w/e
+                    int[] x = {1,2};
+                    position = staggeredGridLayoutManager.findFirstCompletelyVisibleItemPositions(x)[0];
+                    fullList.setLayoutManager(linearLayoutManager);
+                    layoutMode = LayoutMode.LINEAR;
+                }
+                comicSearchResultAdapter.setLayoutMode(layoutMode);
+                ScaleInAnimationAdapter animationAdapter = new ScaleInAnimationAdapter(comicSearchResultAdapter);
+                SlideInBottomAnimationAdapter finalAnimationAdapter = new SlideInBottomAnimationAdapter(animationAdapter);
+                fullList.setAdapter(finalAnimationAdapter);
+                fullList.smoothScrollToPosition(position);
+            }
+        });
+
         sortButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mode == SortMode.ASC) {
-                    mode = SortMode.DESC;
+                if (sortMode == SortMode.ASC) {
+                    sortMode = SortMode.DESC;
                     sortButton.setScaleY(-1f);
-                    layoutManager.setStackFromEnd(true);
-                    layoutManager.setReverseLayout(true);
+                    if(layoutMode == LayoutMode.LINEAR) {
+                        linearLayoutManager.setStackFromEnd(true);
+                    }
+                    linearLayoutManager.setReverseLayout(true);
                 }
                 else {
-                    mode = SortMode.ASC;
+                    sortMode = SortMode.ASC;
                     sortButton.setScaleX(1f);
                     sortButton.setScaleY(1f);
-                    layoutManager.setStackFromEnd(false);
-                    layoutManager.setReverseLayout(false);
+                    if(layoutMode == LayoutMode.LINEAR) {
+                        linearLayoutManager.setStackFromEnd(false);
+                    }
+                    linearLayoutManager.setReverseLayout(false);
                 }
             }
         });
@@ -109,10 +150,14 @@ public class ComicSearchResults extends AppCompatActivity {
 
         fullList = (RecyclerView) findViewById(R.id.searchResults);
         fullList.setHasFixedSize(true);
-        layoutManager = new LinearLayoutManager(this);
-        layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
 
-        mode = SortMode.ASC;
+        linearLayoutManager = new LinearLayoutManager(this);
+        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+
+        staggeredGridLayoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
+
+        sortMode = SortMode.ASC;
+        layoutMode = LayoutMode.LINEAR;
         // Get the intent, verify the action and get the query
         Intent intent = getIntent();
         if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
@@ -184,8 +229,12 @@ public class ComicSearchResults extends AppCompatActivity {
         TextView noData = (TextView) findViewById(R.id.noData);
 
         if(results.size() > 0 && fullList != null) {
-            fullList.setAdapter(new ComicSearchResultAdapter(this, results));
-            fullList.setLayoutManager(layoutManager);
+            comicSearchResultAdapter = new ComicSearchResultAdapter(this, results);
+            comicSearchResultAdapter.setLayoutMode(LayoutMode.LINEAR);
+            ScaleInAnimationAdapter animationAdapter = new ScaleInAnimationAdapter(comicSearchResultAdapter);
+            SlideInBottomAnimationAdapter finalAnimationAdapter = new SlideInBottomAnimationAdapter(animationAdapter);
+            fullList.setAdapter(finalAnimationAdapter);
+            fullList.setLayoutManager(linearLayoutManager);
             noData.setVisibility(View.GONE);
         }
         else {

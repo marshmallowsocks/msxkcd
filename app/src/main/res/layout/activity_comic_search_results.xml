@@ -20,6 +20,15 @@
             app:popupTheme="@style/AppTheme.PopupOverlay">
 
             <ImageButton
+                android:id="@+id/layoutButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginRight="8dp"
+                android:background="@drawable/button_menu"
+                app:srcCompat="@android:drawable/ic_menu_view" />
+
+            <ImageButton
                 android:id="@+id/sortButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

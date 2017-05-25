@@ -70,8 +70,6 @@ public class ComicFragment extends Fragment {
         if(currentComic != null) {
             setupView(rootView);
         }
-        float scale = this.getArguments().getFloat("scale");
-        ((ComicScrollCarouselLayout)rootView).setScaleBoth(scale);
         return rootView;
     }
     private void setComicData() {

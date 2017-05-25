@@ -24,6 +24,7 @@ public class WhatIfSearchResults extends ComicSearchResults {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        layoutButton.setEnabled(false);
         Intent intent = getIntent();
         if(Constants.ALL_WHAT_IF.equals(intent.getAction())) {
             getAllWhatIfData();
@@ -72,7 +73,7 @@ public class WhatIfSearchResults extends ComicSearchResults {
 
         if(results.size() > 0 && fullList != null) {
             fullList.setAdapter(new WhatIfSearchResultAdapter(this, results));
-            fullList.setLayoutManager(layoutManager);
+            fullList.setLayoutManager(linearLayoutManager);
             noData.setVisibility(View.GONE);
         }
         else {

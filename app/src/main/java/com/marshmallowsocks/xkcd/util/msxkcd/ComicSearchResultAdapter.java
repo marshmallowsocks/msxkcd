@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 
 import com.bumptech.glide.Glide;
 import com.marshmallowsocks.xkcd.R;
+import com.marshmallowsocks.xkcd.activities.ComicSearchResults;
 import com.marshmallowsocks.xkcd.activities.msxkcd;
 import com.marshmallowsocks.xkcd.util.constants.Constants;
 import com.squareup.picasso.Picasso;
@@ -26,15 +27,26 @@ public class ComicSearchResultAdapter extends RecyclerView.Adapter<SearchResultV
 
     private List<XKCDComicBean> searchResultData;
     private Context msContext;
-
+    private ComicSearchResults.LayoutMode msLayoutMode;
     public ComicSearchResultAdapter(Context context, List<XKCDComicBean> searchResultData) {
         msContext = context;
         this.searchResultData = searchResultData;
+        msLayoutMode = ComicSearchResults.LayoutMode.LINEAR;
+    }
+
+    public void setLayoutMode(ComicSearchResults.LayoutMode layoutMode) {
+        msLayoutMode = layoutMode;
     }
 
     @Override
     public SearchResultViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.comic_search_result_row, parent, false);
+        View view;
+        if(msLayoutMode == ComicSearchResults.LayoutMode.LINEAR) {
+            view = LayoutInflater.from(parent.getContext()).inflate(R.layout.comic_search_result_row, parent, false);
+        }
+        else {
+            view = LayoutInflater.from(parent.getContext()).inflate(R.layout.comic_search_result_grid, parent, false);
+        }
         return new SearchResultViewHolder(view);
     }
 

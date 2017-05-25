@@ -46,6 +46,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.ToxicBakery.viewpager.transforms.TabletTransformer;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -57,7 +58,6 @@ import com.like.LikeButton;
 import com.like.OnLikeListener;
 import com.marshmallowsocks.xkcd.R;
 import com.marshmallowsocks.xkcd.fragments.ComicFragment;
-import com.marshmallowsocks.xkcd.fragments.ComicScrollCarouselLayout;
 import com.marshmallowsocks.xkcd.util.constants.Constants;
 import com.marshmallowsocks.xkcd.util.core.MSNewComicReceiver;
 import com.marshmallowsocks.xkcd.util.core.MSShakeDetector;
@@ -87,6 +87,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Random;
+import java.util.Stack;
 
 import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
@@ -102,6 +103,7 @@ public class msxkcd extends AppCompatActivity {
     private boolean isFirstComic = false;
     private XKCDComicBean currentComic;
 
+    private Stack<Integer> randomHistory;
     private MSNewComicReceiver newComicReceiver;
     private MSRequestQueue msRequestQueue;
 
@@ -112,21 +114,18 @@ public class msxkcd extends AppCompatActivity {
     private Button randomButton;
     private LinearLayout buttonBar;
 
+    private FloatingActionButton randomFab;
     private MSXkcdViewPager mViewPager;
     private SparseArray<ComicFragment> tagMap;
 
     private boolean isFromSearch;
-
-    public final static float BIG_SCALE = 1.0f;
-    public final static float SMALL_SCALE = 0.7f;
-    public final static float DIFF_SCALE = BIG_SCALE - SMALL_SCALE;
 
     //for shaking
     private SensorManager mSensorManager;
     private Sensor mAccelerometer;
     private MSShakeDetector msShakeDetector;
     //end shaking
-
+    @SuppressWarnings("FieldCanBeLocal")
     private SharedPreferences.OnSharedPreferenceChangeListener downloadListener;
 
     //drag and drop fab
@@ -171,6 +170,7 @@ public class msxkcd extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         randomNumberGenerator = new Random();
+        randomHistory = new Stack<>();
         if(!getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE).contains(Constants.FIRST_TIME_FLAG)) {
             SharedPreferences preferences = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = preferences.edit();
@@ -236,7 +236,7 @@ public class msxkcd extends AppCompatActivity {
         appName.setSpan(typefaceSpan, 0, Constants.APP_NAME.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         toolbar.setTitle(appName);
 
-        final FloatingActionButton randomFab = (FloatingActionButton) findViewById(R.id.randomFab);
+        randomFab = (FloatingActionButton) findViewById(R.id.randomFab);
         View.OnLongClickListener enableDrag = new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
@@ -347,6 +347,11 @@ public class msxkcd extends AppCompatActivity {
                 }
             }
         });
+        /*new Spruce
+                .SpruceBuilder(likeButton)
+                .sortWith(new DefaultSort(50L))
+                .animateWith(new Animator[]{DefaultAnimations.growAnimator(likeButton, 800)})
+                .start();*/
         setSupportActionBar(toolbar);
         //END TOOLBAR INIT
 
@@ -391,12 +396,6 @@ public class msxkcd extends AppCompatActivity {
             }
         }
 
-        new Spruce
-                .SpruceBuilder(viewGroup)
-                .sortWith(new DefaultSort(50L))
-                .animateWith(new Animator[]{DefaultAnimations.growAnimator(viewGroup, 800)})
-                .start();
-
         buttonBar = (LinearLayout) findViewById(R.id.buttonBar);
         previousButton = (Button) findViewById(R.id.previousButton);
         nextButton = (Button) findViewById(R.id.nextButton);
@@ -404,11 +403,11 @@ public class msxkcd extends AppCompatActivity {
         lastButton = (Button) findViewById(R.id.lastButton);
         randomButton = (Button) findViewById(R.id.randomButton);
 
-        new Spruce
+        /*new Spruce
                 .SpruceBuilder(buttonBar)
                 .sortWith(new DefaultSort(100L))
                 .animateWith(new Animator[]{DefaultAnimations.shrinkAnimator(buttonBar, 1200)})
-                .start();
+                .start();*/
         //End comic init
 
         setupBottomNavigationBar();
@@ -518,19 +517,7 @@ public class msxkcd extends AppCompatActivity {
         mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                try {
-                    if (positionOffset >= 0f && positionOffset <= 1f) {
-                        ComicScrollCarouselLayout cur = (ComicScrollCarouselLayout) tagMap.get(position).getView();
-                        ComicScrollCarouselLayout next = (ComicScrollCarouselLayout) tagMap.get(position + 1).getView();
-                        if (cur != null && next != null) {
-                            cur.setScaleBoth(BIG_SCALE - DIFF_SCALE * positionOffset);
-                            next.setScaleBoth(SMALL_SCALE + DIFF_SCALE * positionOffset);
-                        }
-                    }
-                }
-                catch(Exception e) {
-                    //dont care;
-                }
+                //don't care
             }
 
             @Override
@@ -561,6 +548,7 @@ public class msxkcd extends AppCompatActivity {
         ComicFragmentAdapter mComicFragmentAdapter = new ComicFragmentAdapter(getSupportFragmentManager());
         mViewPager = (MSXkcdViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mComicFragmentAdapter);
+        mViewPager.setPageTransformer(true, new TabletTransformer());
         mViewPager.setOffscreenPageLimit(3);
 
         if(!isFromSearch) {
@@ -1074,6 +1062,7 @@ public class msxkcd extends AppCompatActivity {
         while(temp.intValue() == which.intValue()) {
             temp = randomNumberGenerator.nextInt(max) + 1;
         }
+        randomHistory.push(which);
         which = temp;
         if (which == 1) {
             previousButton.setEnabled(false);
@@ -1112,8 +1101,19 @@ public class msxkcd extends AppCompatActivity {
             nextButton.setAlpha(1f);
             lastButton.setAlpha(1f);
         }
+        View.OnLongClickListener goToLastRandomComic = new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                if(!randomHistory.isEmpty()) {
+                    mViewPager.setPagingEnabled(true);
+                    mViewPager.setCurrentItem(randomHistory.pop() - 1);
+                }
+                return true;
+            }
+        };
+        randomButton.setOnLongClickListener(goToLastRandomComic);
         mViewPager.setPagingEnabled(true);
-        mViewPager.setCurrentItem(which, false);
+        mViewPager.setCurrentItem(which);
     }
     public void toggleViewPager(boolean toggle) {
         mViewPager.setPagingEnabled(toggle);
@@ -1179,11 +1179,7 @@ public class msxkcd extends AppCompatActivity {
         Picasso.with(msxkcd.this).load(comic.getImageUrl()).into(target);
         db.close();
     }
-    private class ComicFragmentAdapter extends FragmentStatePagerAdapter
-                    implements ViewPager.PageTransformer {
-        final static float BIG_SCALE = 1.0f;
-        final static float SMALL_SCALE = 0.7f;
-        final static float DIFF_SCALE = BIG_SCALE - SMALL_SCALE;
+    private class ComicFragmentAdapter extends FragmentStatePagerAdapter {
 
         ComicFragmentAdapter(FragmentManager fm) {
             super(fm);
@@ -1195,15 +1191,6 @@ public class msxkcd extends AppCompatActivity {
 
             Bundle bundle = new Bundle();
             bundle.putInt("position", position);
-            float scale;
-            if (position == max - 1) {
-                scale = BIG_SCALE;
-            }
-            else {
-                scale = SMALL_SCALE;
-            }
-            bundle.putFloat("scale", scale);
-            comicFragment.setArguments(bundle);
             tagMap.put(position, comicFragment);
             comicFragment.setComicContext(position + 1);
             return comicFragment;
@@ -1218,19 +1205,6 @@ public class msxkcd extends AppCompatActivity {
         @Override
         public CharSequence getPageTitle(int position) {
             return Constants.APP_NAME;
-        }
-
-        @Override
-        public void transformPage(View page, float position) {
-            ComicScrollCarouselLayout layout = (ComicScrollCarouselLayout) page.findViewById(R.id.componentHolder);
-            float scale = BIG_SCALE;
-            if (position > 0) {
-                scale = scale - position * DIFF_SCALE;
-            } else {
-                scale = scale + position * DIFF_SCALE;
-            }
-            if (scale < 0) scale = 0;
-            layout.setScaleBoth(scale);
         }
     }
 }
