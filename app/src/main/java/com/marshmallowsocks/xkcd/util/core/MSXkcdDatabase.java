@@ -123,9 +123,9 @@ public class MSXkcdDatabase extends SQLiteAssetHelper {
 
         }
         catch(SQLException e) {
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     public boolean contains(Integer num) {

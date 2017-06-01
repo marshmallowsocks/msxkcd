@@ -12,9 +12,9 @@
     <application
         android:allowBackup="true"
         android:fullBackupContent="false"
-        android:icon="@mipmap/xkcd_icon"
+        android:icon="@mipmap/msxkcd_logo"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/xkcd_icon_circle"
+        android:roundIcon="@mipmap/msxkcd_logo"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
@@ -83,13 +83,18 @@
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
             </intent-filter>
         </service>
-        <service android:name=".util.http.MSBackgroundDownloader"
+        <service
+            android:name=".util.http.MSBackgroundDownloader"
             android:enabled="true"
-            android:exported="false"/>
+            android:exported="false">
+            <intent-filter>
+                <action android:name="msDownloaderService" />
+            </intent-filter>
+        </service>
 
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/ms_stat_msxkcd" />
+            android:resource="@mipmap/msxkcd_logo" />
         <!--
              Set color used with incoming notification messages. This is used when no color is set for the incoming
              notification message. See README(https://goo.gl/6BKBk7) for more.
@@ -103,21 +108,20 @@
             android:configChanges="orientation|screenSize"
             android:label="@string/title_activity_msxkcd"
             android:theme="@style/AppTheme.NoActionBar">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
 
             <meta-data
                 android:name="android.app.default_searchable"
                 android:value=".activities.ComicSearchResults" />
         </activity>
-        <activity android:name="com.marshmallowsocks.xkcd.activities.MSXkcdIntro"
-            android:label="AppIntro"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen"/>
-        <activity android:name=".activities.Settings"
-            android:label="Settings"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
+        <activity
+            android:name=".activities.Splash"
+            android:theme="@style/IntroSplash">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

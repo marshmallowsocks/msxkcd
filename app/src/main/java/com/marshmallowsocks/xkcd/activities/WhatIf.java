@@ -529,7 +529,7 @@ public class WhatIf extends AppCompatActivity {
                                         int start = spannableStringBuilder.getSpanStart(span);
                                         int end = spannableStringBuilder.getSpanEnd(span);
                                         spannableStringBuilder.removeSpan(span);
-                                        span = new CitationSpan("", citation.getCitationBody());
+                                        span = new CitationSpan(citation.getCitationBody());
                                         spannableStringBuilder.setSpan(span, start, end, 0);
                                     }
                                 }

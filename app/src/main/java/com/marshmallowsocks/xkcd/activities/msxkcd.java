@@ -2,6 +2,7 @@ package com.marshmallowsocks.xkcd.activities;
 
 import android.Manifest;
 import android.animation.Animator;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -63,7 +64,6 @@ import com.marshmallowsocks.xkcd.util.core.MSNewComicReceiver;
 import com.marshmallowsocks.xkcd.util.core.MSShakeDetector;
 import com.marshmallowsocks.xkcd.util.core.MSXkcdDatabase;
 import com.marshmallowsocks.xkcd.util.core.MSXkcdViewPager;
-import com.marshmallowsocks.xkcd.util.http.MSBackgroundDownloader;
 import com.marshmallowsocks.xkcd.util.http.MSRequestQueue;
 import com.marshmallowsocks.xkcd.util.msxkcd.XKCDComicBean;
 import com.nightonke.boommenu.Animation.BoomEnum;
@@ -94,6 +94,7 @@ import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 import uk.co.chrisjenx.calligraphy.CalligraphyTypefaceSpan;
 import uk.co.chrisjenx.calligraphy.TypefaceUtils;
 
+
 public class msxkcd extends AppCompatActivity {
 
     private static Integer which = -1;
@@ -106,6 +107,8 @@ public class msxkcd extends AppCompatActivity {
     private Stack<Integer> randomHistory;
     private MSNewComicReceiver newComicReceiver;
     private MSRequestQueue msRequestQueue;
+
+    private ProgressDialog dialog;
 
     private Button previousButton;
     private Button nextButton;
@@ -169,6 +172,8 @@ public class msxkcd extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        dialog = ProgressDialog.show(this, "Loading", "Loading latest comic");
+        dialog.show();
         randomNumberGenerator = new Random();
         randomHistory = new Stack<>();
         if(!getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE).contains(Constants.FIRST_TIME_FLAG)) {
@@ -176,7 +181,6 @@ public class msxkcd extends AppCompatActivity {
             SharedPreferences.Editor editor = preferences.edit();
             editor.putBoolean(Constants.FIRST_TIME_FLAG, true);
             editor.apply();
-            startActivity(new Intent(this, MSXkcdIntro.class));
         }
         if(!getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE).contains(Constants.OFFLINE_COUNT)) {
             SharedPreferences preferences = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
@@ -204,6 +208,7 @@ public class msxkcd extends AppCompatActivity {
                         SharedPreferences.Editor editor = sharedPreferences.edit();
                         editor.remove(Constants.SYNC_IN_PROGRESS);
                         editor.apply();
+                        stopService(new Intent("msDownloaderService"));
                     }
                 }
             }
@@ -347,11 +352,11 @@ public class msxkcd extends AppCompatActivity {
                 }
             }
         });
-        /*new Spruce
+        new Spruce
                 .SpruceBuilder(likeButton)
                 .sortWith(new DefaultSort(50L))
                 .animateWith(new Animator[]{DefaultAnimations.growAnimator(likeButton, 800)})
-                .start();*/
+                .start();
         setSupportActionBar(toolbar);
         //END TOOLBAR INIT
 
@@ -403,11 +408,11 @@ public class msxkcd extends AppCompatActivity {
         lastButton = (Button) findViewById(R.id.lastButton);
         randomButton = (Button) findViewById(R.id.randomButton);
 
-        /*new Spruce
+        new Spruce
                 .SpruceBuilder(buttonBar)
                 .sortWith(new DefaultSort(100L))
                 .animateWith(new Animator[]{DefaultAnimations.shrinkAnimator(buttonBar, 1200)})
-                .start();*/
+                .start();
         //End comic init
 
         setupBottomNavigationBar();
@@ -564,6 +569,7 @@ public class msxkcd extends AppCompatActivity {
 
         mComicFragmentAdapter.notifyDataSetChanged();
         setFavoriteCheckListener();
+        dialog.cancel();
     }
     public void toggleAltText() {
         View rootView = tagMap.get(mViewPager.getCurrentItem()).getView();
@@ -588,6 +594,18 @@ public class msxkcd extends AppCompatActivity {
             closeButton.setVisibility(View.VISIBLE);
             explainButton.setVisibility(View.VISIBLE);
             metadata.setVisibility(View.VISIBLE);
+        }
+        else {
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                componentLayout.setBackgroundResource(R.color.colorPrimaryLight);
+                altText.setElevation(0.0f);
+            }
+            comicHolder.setAlpha(1.0f);
+            toggleButtonBar(true);
+            altText.setVisibility(View.GONE);
+            closeButton.setVisibility(View.GONE);
+            explainButton.setVisibility(View.GONE);
+            metadata.setVisibility(View.GONE);
         }
     }
     private void getLatestData() {
@@ -624,14 +642,14 @@ public class msxkcd extends AppCompatActivity {
                                 editor.apply();
 
                                 if(db.contains(currentComic.getNumber())) {
-                                    if (!(db.addNewMetadata(currentComic))) {
+                                    if (db.addNewMetadata(currentComic)) {
                                         Toast.makeText(msxkcd.this, "An error occurred with the database", Toast.LENGTH_SHORT);
                                     }
                                 }
                             }
 
                             if(!db.contains(currentComic.getNumber())) {
-                                if (!(db.addNewMetadata(currentComic))) {
+                                if (db.addNewMetadata(currentComic)) {
                                     Toast.makeText(msxkcd.this, "An error occurred with the database", Toast.LENGTH_SHORT);
                                 }
                             }
@@ -688,7 +706,7 @@ public class msxkcd extends AppCompatActivity {
                             currentComic.setDate(date);
 
                             if(!db.contains(currentComic.getNumber())) {
-                                if (!(db.addNewMetadata(currentComic))) {
+                                if (!(!db.addNewMetadata(currentComic))) {
                                     Toast.makeText(msxkcd.this, "An error occurred with the database", Toast.LENGTH_SHORT);
                                 }
                             }
@@ -751,11 +769,10 @@ public class msxkcd extends AppCompatActivity {
         }
         final BoomMenuButton bmb = (BoomMenuButton) toolbar.findViewById(R.id.action_bar_left_bmb);
         final FloatingActionButton randomFab = (FloatingActionButton) findViewById(R.id.randomFab);
-
         if(!"SYNC IN PROGRESS".equals(buttonSubtitles[5])) {
             buttonSubtitles[5] = "DOWNLOADED -/?";
             buttonSubtitles[5] = buttonSubtitles[5].replace("-", downloaded.toString());
-            buttonSubtitles[5] = buttonSubtitles[5].replace("?", max.toString());
+            buttonSubtitles[5] = buttonSubtitles[5].replace("?", Integer.toString(max - 1));
         }
 
         //lock orientation on boom
@@ -782,7 +799,16 @@ public class msxkcd extends AppCompatActivity {
 
             @Override
             public void onBoomWillShow() {
+                View rootView = tagMap.get(mViewPager.getCurrentItem()).getView();
+                if(rootView == null) {
+                    Log.wtf("wtf?", "not coo.");
+                    return;
+                }
+                TextView altText = (TextView) rootView.findViewById(R.id.altText);
 
+                if(altText.getVisibility() == View.VISIBLE) {
+                    toggleAltText();
+                }
             }
 
             @Override
@@ -808,6 +834,7 @@ public class msxkcd extends AppCompatActivity {
             public void onBoomButtonClick(int index) {
                 switch(index) {
                     case 0:
+                        Toast.makeText(msxkcd.this, "Long pressing the image also reveals alt text".toUpperCase(), Toast.LENGTH_LONG).show();
                         toggleAltText();
                         break;
                     case 1:
@@ -886,7 +913,7 @@ public class msxkcd extends AppCompatActivity {
                         }
                         break;
                     case 5:
-                        startService(new Intent(msxkcd.this, MSBackgroundDownloader.class));
+                        startService(new Intent("msDownloaderService"));
                         break;
                 }
             }
@@ -1050,11 +1077,12 @@ public class msxkcd extends AppCompatActivity {
                 randomButtonAction();
             }
         });
-
-        nextButton.setEnabled(false);
-        nextButton.setAlpha(0.5f);
-        lastButton.setEnabled(false);
-        lastButton.setAlpha(0.5f);
+        if(!isFromSearch) {
+            nextButton.setEnabled(false);
+            nextButton.setAlpha(0.5f);
+            lastButton.setEnabled(false);
+            lastButton.setAlpha(0.5f);
+        }
     }
     private void randomButtonAction() {
         Integer temp;

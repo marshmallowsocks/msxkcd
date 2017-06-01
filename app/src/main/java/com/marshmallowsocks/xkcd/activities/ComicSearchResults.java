@@ -104,8 +104,12 @@ public class ComicSearchResults extends AppCompatActivity {
                     sortButton.setScaleY(-1f);
                     if(layoutMode == LayoutMode.LINEAR) {
                         linearLayoutManager.setStackFromEnd(true);
+                        linearLayoutManager.setReverseLayout(true);
                     }
-                    linearLayoutManager.setReverseLayout(true);
+                    else {
+                        staggeredGridLayoutManager.setReverseLayout(true);
+                    }
+
                 }
                 else {
                     sortMode = SortMode.ASC;
@@ -113,8 +117,11 @@ public class ComicSearchResults extends AppCompatActivity {
                     sortButton.setScaleY(1f);
                     if(layoutMode == LayoutMode.LINEAR) {
                         linearLayoutManager.setStackFromEnd(false);
+                        linearLayoutManager.setReverseLayout(false);
                     }
-                    linearLayoutManager.setReverseLayout(false);
+                    else {
+                        staggeredGridLayoutManager.setReverseLayout(false);
+                    }
                 }
             }
         });

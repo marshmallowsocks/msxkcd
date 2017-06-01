@@ -90,11 +90,7 @@ public class MSBackgroundDownloader extends Service {
                                 .setContentIntent(PendingIntent.getActivity(context, appId, new Intent(context, msxkcd.class), PendingIntent.FLAG_CANCEL_CURRENT));
                         mNotifyManager.notify(appId, mBuilder.build());
                         MSBackgroundDownloader.this.onDestroy();
-                        SharedPreferences preferences = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
-                        SharedPreferences.Editor editor = preferences.edit();
-                        editor.putInt(Constants.OFFLINE_COUNT, completeDownloads.intValue());
-                        editor.remove(Constants.SYNC_IN_PROGRESS);
-                        editor.apply();
+
                     }
                 }
                 if(status == Fetch.STATUS_ERROR) {
@@ -142,7 +138,14 @@ public class MSBackgroundDownloader extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        SharedPreferences preferences = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putInt(Constants.OFFLINE_COUNT, completeDownloads.intValue());
+        editor.remove(Constants.SYNC_IN_PROGRESS);
+        editor.apply();
+        editor.apply();
         fetchQueue.release();
         db.close();
+        stopSelf();
     }
 }

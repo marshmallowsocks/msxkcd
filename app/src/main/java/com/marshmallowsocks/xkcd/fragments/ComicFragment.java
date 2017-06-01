@@ -239,7 +239,7 @@ public class ComicFragment extends Fragment {
                             currentComic.setDate(date);
 
                             if(!db.contains(currentComic.getNumber())) {
-                                if (!(db.addNewMetadata(currentComic))) {
+                                if (db.addNewMetadata(currentComic)) {
                                     Toast.makeText(getActivity(), "An error occurred with the database", Toast.LENGTH_SHORT);
                                 }
                             }

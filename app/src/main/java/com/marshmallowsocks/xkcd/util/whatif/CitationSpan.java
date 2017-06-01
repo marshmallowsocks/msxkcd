@@ -16,8 +16,8 @@ public class CitationSpan extends URLSpan {
 
     private String body;
 
-    public CitationSpan(String url, String body) {
-        super(url);
+    public CitationSpan(String body) {
+        super("");
         this.body = body;
     }
 

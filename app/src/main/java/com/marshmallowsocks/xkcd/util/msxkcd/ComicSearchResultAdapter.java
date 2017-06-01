@@ -3,6 +3,7 @@ package com.marshmallowsocks.xkcd.util.msxkcd;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,7 @@ import com.marshmallowsocks.xkcd.activities.msxkcd;
 import com.marshmallowsocks.xkcd.util.constants.Constants;
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
 import java.util.List;
 
 import static com.bumptech.glide.load.engine.DiskCacheStrategy.SOURCE;
@@ -53,6 +55,38 @@ public class ComicSearchResultAdapter extends RecyclerView.Adapter<SearchResultV
     @Override
     public void onBindViewHolder(final SearchResultViewHolder holder, int position) {
         holder.comicTitle.setText(searchResultData.get(position).getTitle().toUpperCase());
+        XKCDComicBean currentComic = searchResultData.get(position);
+        File image = new File(msContext.getFilesDir().getAbsolutePath() + "/xkcd_" + currentComic.getNumber() + currentComic.getImageUrl().substring(currentComic.getImageUrl().length() - 4));
+        String imageUrl;
+        if(image.exists()) {
+            imageUrl = "file:/" + image.getAbsolutePath();
+            Log.d("comicHolder url", imageUrl);
+            if (currentComic.getImageUrl().endsWith(".gif")) {
+                Glide.with(msContext)
+                        .load(image)
+                        .asGif()
+                        .diskCacheStrategy(SOURCE)
+                        .into(holder.comicImage);
+            } else if (currentComic.getImageUrl().endsWith(".png") || currentComic.getImageUrl().endsWith(".jpg")) {
+                Picasso.with(msContext)
+                        .load(image)
+                        .into(holder.comicImage);
+            }
+        }
+        else {
+            imageUrl = currentComic.getImageUrl();
+            if (currentComic.getImageUrl().endsWith(".gif")) {
+                Glide.with(msContext)
+                        .load(imageUrl)
+                        .asGif()
+                        .diskCacheStrategy(SOURCE)
+                        .into(holder.comicImage);
+            } else if (currentComic.getImageUrl().endsWith(".png") || currentComic.getImageUrl().endsWith(".jpg")) {
+                Picasso.with(msContext)
+                        .load(imageUrl)
+                        .into(holder.comicImage);
+            }
+        }
         if(searchResultData.get(position).getImageUrl().endsWith(".gif")) {
             Glide.with(msContext).load(searchResultData.get(position).getImageUrl()).asGif().diskCacheStrategy(SOURCE)
                     .into(holder.comicImage);
