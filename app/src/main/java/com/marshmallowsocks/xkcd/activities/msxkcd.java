@@ -64,6 +64,7 @@ import com.marshmallowsocks.xkcd.util.core.MSNewComicReceiver;
 import com.marshmallowsocks.xkcd.util.core.MSShakeDetector;
 import com.marshmallowsocks.xkcd.util.core.MSXkcdDatabase;
 import com.marshmallowsocks.xkcd.util.core.MSXkcdViewPager;
+import com.marshmallowsocks.xkcd.util.http.MSBackgroundDownloader;
 import com.marshmallowsocks.xkcd.util.http.MSRequestQueue;
 import com.marshmallowsocks.xkcd.util.msxkcd.XKCDComicBean;
 import com.nightonke.boommenu.Animation.BoomEnum;
@@ -208,7 +209,7 @@ public class msxkcd extends AppCompatActivity {
                         SharedPreferences.Editor editor = sharedPreferences.edit();
                         editor.remove(Constants.SYNC_IN_PROGRESS);
                         editor.apply();
-                        stopService(new Intent("msDownloaderService"));
+                        stopService(new Intent(msxkcd.this, MSBackgroundDownloader.class));
                     }
                 }
             }
@@ -706,7 +707,7 @@ public class msxkcd extends AppCompatActivity {
                             currentComic.setDate(date);
 
                             if(!db.contains(currentComic.getNumber())) {
-                                if (!(!db.addNewMetadata(currentComic))) {
+                                if (db.addNewMetadata(currentComic)) {
                                     Toast.makeText(msxkcd.this, "An error occurred with the database", Toast.LENGTH_SHORT);
                                 }
                             }
@@ -913,7 +914,8 @@ public class msxkcd extends AppCompatActivity {
                         }
                         break;
                     case 5:
-                        startService(new Intent("msDownloaderService"));
+                        Intent serviceIntent = new Intent(msxkcd.this, MSBackgroundDownloader.class);
+                        startService(serviceIntent);
                         break;
                 }
             }

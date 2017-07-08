@@ -30,10 +30,7 @@ public class MSBackgroundDownloader extends Service {
     private Context context;
     private MSXkcdDatabase db;
     private int maxDownloadSize;
-    private int index;
     private Fetch fetchQueue;
-    private List<XKCDComicBean> allComics;
-    private List<Request> downloadRequests;
     private AtomicInteger completeDownloads;
     private NotificationManager mNotifyManager;
     private NotificationCompat.Builder mBuilder;
@@ -45,7 +42,7 @@ public class MSBackgroundDownloader extends Service {
     public void startDownloads() {
         final int appId = 72345;
         completeDownloads = new AtomicInteger(0);
-        downloadRequests = new ArrayList<>();
+        List<Request> downloadRequests = new ArrayList<>();
         mNotifyManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder = new NotificationCompat.Builder(context);
         mBuilder.setContentTitle("Downloading comics")
@@ -56,9 +53,10 @@ public class MSBackgroundDownloader extends Service {
                 .setProgress(100, 0, false)
                 .setContentIntent(PendingIntent.getActivity(context, appId, new Intent(context, msxkcd.class), PendingIntent.FLAG_CANCEL_CURRENT));
         mNotifyManager.notify(appId, mBuilder.build());
-        allComics = db.getAllComics();
+        List<XKCDComicBean> allComics = db.getAllComics();
         maxDownloadSize = allComics.size();
 
+        int index;
         for(index = 0; index < maxDownloadSize; index++) {
             XKCDComicBean comic = allComics.get(index);
             if(isInteractive(comic)) {
@@ -108,6 +106,7 @@ public class MSBackgroundDownloader extends Service {
     private boolean isInteractive(XKCDComicBean comic) {
         return comic != null && !(comic.getImageUrl().endsWith(".png") || comic.getImageUrl().endsWith(".jpg") || comic.getImageUrl().endsWith(".gif"));
     }
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
