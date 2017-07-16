@@ -3,6 +3,7 @@ package com.marshmallowsocks.xkcd.activities;
 import android.Manifest;
 import android.animation.Animator;
 import android.app.ProgressDialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -15,6 +16,7 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -202,7 +204,7 @@ public class msxkcd extends AppCompatActivity {
                 }
                 if(Constants.SYNC_IN_PROGRESS.equals(key)) {
                     if(sharedPreferences.getBoolean(Constants.SYNC_IN_PROGRESS, false)) {
-                        buttonSubtitles[5] = "SYNC_IN_PROGRESS";
+                        buttonSubtitles[5] = "SYNC IN PROGRESS";
                     }
                     else {
                         buttonSubtitles[5] = "DOWNLOADED -/?";
@@ -349,7 +351,7 @@ public class msxkcd extends AppCompatActivity {
                             msxkcd.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, Constants.WRITE_EXTERNAL_STORAGE);
                 }
                 else {
-                    saveImageToGallery();
+                    shareImage();
                 }
             }
         });
@@ -480,7 +482,7 @@ public class msxkcd extends AppCompatActivity {
                             msxkcd.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, Constants.WRITE_EXTERNAL_STORAGE);
                 }
                 else {
-                    saveImageToGallery();
+                    shareImage();
                 }
             }
         });
@@ -512,7 +514,7 @@ public class msxkcd extends AppCompatActivity {
         switch (requestCode) {
             case Constants.WRITE_EXTERNAL_STORAGE:
                 if ((grantResults.length > 0) && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    saveImageToGallery();
+                    shareImage();
                 }
                 break;
             default:
@@ -670,6 +672,8 @@ public class msxkcd extends AppCompatActivity {
                             getComicData(previous);
                             previous--;
                         }
+
+                        db.close();
                     }
                 },
                 new Response.ErrorListener()
@@ -1186,14 +1190,23 @@ public class msxkcd extends AppCompatActivity {
             }
         }
     }
-    private void saveImageToGallery() {
+    private void shareImage() {
         MSXkcdDatabase db = new MSXkcdDatabase(msxkcd.this);
         final XKCDComicBean comic = db.getComic(which);
+
         Target target = new Target() {
             @Override
             public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-                MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, comic.getTitle(), null);
-                Snackbar.make(findViewById(R.id.mainContainer), "Comic saved to gallery".toUpperCase(), Snackbar.LENGTH_SHORT).show();
+                Intent share = new Intent(Intent.ACTION_SEND);
+                share.setType("image/png");
+
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Images.Media.TITLE, comic.getTitle());
+                values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
+                Uri uri = Uri.parse(MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, comic.getTitle(), null));
+                share.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                share.putExtra(Intent.EXTRA_STREAM, uri);
+                startActivity(Intent.createChooser(share, "Share Comic"));
             }
 
             @Override
