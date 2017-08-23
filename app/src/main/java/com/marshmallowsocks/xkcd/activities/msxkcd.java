@@ -205,12 +205,14 @@ public class msxkcd extends AppCompatActivity {
                 if(Constants.SYNC_IN_PROGRESS.equals(key)) {
                     if(sharedPreferences.getBoolean(Constants.SYNC_IN_PROGRESS, false)) {
                         buttonSubtitles[5] = "SYNC IN PROGRESS";
+                        setupBoomMenu(null);
                     }
                     else {
                         buttonSubtitles[5] = "DOWNLOADED -/?";
                         SharedPreferences.Editor editor = sharedPreferences.edit();
                         editor.remove(Constants.SYNC_IN_PROGRESS);
                         editor.apply();
+                        setupBoomMenu(null);
                         stopService(new Intent(msxkcd.this, MSBackgroundDownloader.class));
                     }
                 }

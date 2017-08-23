@@ -2,9 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/XKCD.iml" filepath="$PROJECT_DIR$/XKCD.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/asdf/asdf.iml" filepath="$PROJECT_DIR$/asdf/asdf.iml" />
-      <module fileurl="file://$PROJECT_DIR$/msxkcd.iml" filepath="$PROJECT_DIR$/msxkcd.iml" />
     </modules>
   </component>
 </project>

@@ -56,7 +56,7 @@
                     android:layout_height="56dp"
                     android:layout_gravity="end"
                     android:background="@drawable/button_menu"
-                    android:src="@android:drawable/ic_menu_save" />
+                    android:src="@android:drawable/ic_menu_share" />
                 <com.like.LikeButton
                     android:id="@+id/likeButton"
                     android:layout_width="56dp"
