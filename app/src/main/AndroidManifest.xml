@@ -108,7 +108,6 @@
             android:configChanges="orientation|screenSize"
             android:label="@string/title_activity_msxkcd"
             android:theme="@style/AppTheme.NoActionBar">
-
             <meta-data
                 android:name="android.app.default_searchable"
                 android:value=".activities.ComicSearchResults" />
@@ -116,6 +115,16 @@
         <activity
             android:name=".activities.Splash"
             android:theme="@style/IntroSplash">
+            <!--intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter-->
+        </activity>
+        <activity
+            android:name=".activities.msxkcd2"
+            android:label="@string/title_activity_msxkcd2"
+            android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

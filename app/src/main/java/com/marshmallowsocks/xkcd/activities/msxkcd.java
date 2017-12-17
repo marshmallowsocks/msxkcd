@@ -228,8 +228,10 @@ public class msxkcd extends AppCompatActivity {
         );
         //set up shakes
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mAccelerometer = mSensorManager
-                .getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        if(mSensorManager != null) {
+            mAccelerometer = mSensorManager
+                    .getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        }
         msShakeDetector = new MSShakeDetector();
         msShakeDetector.setOnShakeListener(new MSShakeDetector.OnShakeListener() {
             @Override
