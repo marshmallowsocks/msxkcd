@@ -243,9 +243,13 @@ public class ComicSearchResults extends AppCompatActivity {
             fullList.setAdapter(finalAnimationAdapter);
             fullList.setLayoutManager(linearLayoutManager);
             noData.setVisibility(View.GONE);
+            layoutButton.setEnabled(true);
+            sortButton.setEnabled(true);
         }
         else {
             noData.setVisibility(View.VISIBLE);
+            layoutButton.setEnabled(false);
+            sortButton.setEnabled(false);
         }
     }
 }
